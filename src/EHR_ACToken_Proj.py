@@ -140,10 +140,10 @@ if __name__ == "__main__":
 	#user_address = PatientACToken.getAddress('sam_ubuntu', './addr_list.json')
 	#patientACToken_address = PatientACToken.getAddress('PatientACToken', './addr_list.json')
 
-    institution1Address = EHR_ACToken_Proj.getAddress('institution1', './addr_list.json')
-    institution2Address = EHR_ACToken_Proj.getAddress('institution2', './addr_list.json')
-    EHR_ACToken_Proj_address = EHR_ACToken_Proj.getAddress('EHR_ACToken_Proj', './addr_list.json')
-
+    newInstAddr = EHR_ACToken_Proj.getAddress('newInst', './addr_list.json')
+    differentInstAddr = EHR_ACToken_Proj.getAddress('differentInst', './addr_list.json')
+    #Are these addresses just random?
+    
 	# list Access control
 	'''json_data=TypesUtil.string_to_json(token_data[-1])
 	print("resource: %s" %(json_data['resource']))
@@ -156,32 +156,40 @@ if __name__ == "__main__":
     #create token, saving token address in variable (to use for below instructions)
     patient1Name = 'Jeff'
     patient1Gender = 'male'
-    #tokenAddress1 = createToken(__, __, __)
-    #print(tokenAddress1)
+    tokenAddress1 = createToken('EHR_ACToken_Proj', patient1Name, patient1Gender)
+    print(tokenAddress1)
     
     #query token data (and print it)
-    #token1DataInitial = queryTokenData(tokenAddress1)
-    #print_tokendata(token1DataInitial)
+    token1DataInitial = queryTokenData(tokenAddress1)
+    print_tokendata(token1DataInitial)
     
     #add institutions (other than initial one)
-    #addInstitution(tokenAddress1, ___)
+    addInstitution(tokenAddress1, 'newInst', newInstAddr)
+    addInstitution(tokenAddress1, 'differentInst', differentInstAddr)
     
     #check token for institutions
-    #checkToken(tokenAddress1, __)
+    if checkToken(tokenAddress1, newInstAddr) == True:
+        print("Check passed")
+    else:
+        print("Check failed")
+    
     
     #query token data (and print it)
-    #token1DataAdd = queryTokenData(tokenAddress1)
-    #print_tokendata(token1DataAdd)
+    token1DataAdd = queryTokenData(tokenAddress1)
+    print_tokendata(token1DataAdd)
     
     #delete institutions (other than initial one)
-    #deleteInstitution(tokenAddress1, __)
+    deleteInstitution(tokenAddress1, newInstAddr)
     
     #check token for institutions
-    #checkToken(tokenAddress1, __)
+    if checkToken(tokenAddress1, newInstAddr) == True:
+        print("Check passed")
+    else:
+        print("Check failed")
     
     #query token data (and print it)
-    #token1DataDelete = queryTokenData(tokenAddress1)
-    #print_tokendata(token1DataDelete)
+    token1DataDelete = queryTokenData(tokenAddress1)
+    print_tokendata(token1DataDelete)
     
 
 	pass

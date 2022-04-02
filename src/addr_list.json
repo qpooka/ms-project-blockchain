@@ -1,5 +1,5 @@
 {
-	"institution1" : "",
-	"institution2" : "",
-	"EHR_ACToken_Proj" : ""
+	"newInst" : "0x12cf493c45048648ab7027f0d6737bf9e352aa48",
+	"differentInst" : "0x7711493c45048648abc027f0d6737bec2352e180",
+	"EHR_ACToken_Proj" : "0xde12393c45048648ab7027f0d6737bf9e352e677"
 }
