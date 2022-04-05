@@ -46,6 +46,11 @@ contract EHR_ACToken_Proj {
 		superInstitution = msg.sender; //initialized with contract creator
 	}
 	
+	function addNumber(uint a, uint b) public view returns (uint) {
+		uint c = a + b;
+		return c;
+	}
+	
 	// create/initialize token, return address created
 	function createToken(string memory institutionName,
 						string memory patientName,
@@ -53,6 +58,10 @@ contract EHR_ACToken_Proj {
 						
 		// check for institution that is making the check
 		// allow contract creator and institutions on the AC list
+		//bytes32 aHash = keccak256(abi.encodePacked(counter, block.timestamp, msg.sender));
+		//address newTokenIdAddress = 0xCf5609B003B2776699eEA1233F7C82D5695cC9AA;
+		//return (true, newTokenIdAddress);
+		
 		if ( (msg.sender == superInstitution) ) {
 		
 			counter += 1;
@@ -73,8 +82,10 @@ contract EHR_ACToken_Proj {
 			
 			return (true, newTokenIdAddress);
 		}
-		else
+		else {
 			return (false, address(0)); //return dummy address
+		}
+		
 	}
 	
 	// find/query token, return data in token
@@ -128,8 +139,9 @@ contract EHR_ACToken_Proj {
 			
 			return true;
 		}
-		else
+		else {
 			return false;
+		}
 	}
 	
 	//delete institution in AC list
@@ -150,8 +162,9 @@ contract EHR_ACToken_Proj {
 			
 			return true;
 		}
-		else
+		else {
 			return false;
+		}
 	}
 	
 	// check token for institution, return true or false
@@ -163,8 +176,9 @@ contract EHR_ACToken_Proj {
 			(bool find,) = findInstitution(tokenIdAddress, institutionAddress);
 			return find;
 		}
-		else
+		else {
 			return false;
+		}
 	}
 	
 	// tx.origin vs msg.sender
@@ -176,8 +190,9 @@ contract EHR_ACToken_Proj {
 		uint limit = acTokens[tokenIdAddress].institutionAmount;
 		
 		for(uint i = 0; i < limit; i++) {
-			if(acTokens[tokenIdAddress].authInstitutions[i] == instAddress) 
+			if(acTokens[tokenIdAddress].authInstitutions[i] == instAddress) {
 				return (true, i);
+			}
 		}
 		return (false, 0);
 	}
