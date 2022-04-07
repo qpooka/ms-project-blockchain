@@ -11,6 +11,8 @@ Access control token module
 
 from web3 import Web3, HTTPProvider, IPCProvider
 import json, datetime, time
+import sys
+import argparse
 
 class EHR_ACToken_Proj(object):
     def __init__(self, http_provider, contract_addr, contract_config):
@@ -41,56 +43,36 @@ class EHR_ACToken_Proj(object):
     '''
     
     # get all data from a token
-    def queryTokenData(self, tokenAddress):
+    def queryTokenData(self, tokenId):
         #Change account address to EIP checksum format
-        checksumAddr = Web3.toChecksumAddress(tokenAddress)
+        # checksumAddr = Web3.toChecksumAddress(tokenAddress)
 
         # get token status
-        tokenData = self.contract.call({'from': self.web3.eth.coinbase}).queryTokenData(checksumAddr)
+        tokenData = self.contract.call({'from': self.web3.eth.coinbase}).queryTokenData(tokenId)
+        # tokenData = self.contract.functions.queryTokenData(checksumAddr).call({'from': self.web3.eth.coinbase})
         return tokenData
 
-    # add institution to a token's access list
-    def addInstitution(self, tokenAddress, newInstName, newInstAddress):
-        #Change account address to EIP checksum format
-        checksumAddr = Web3.toChecksumAddress(tokenAddress)
-        newInstAddr = Web3.toChecksumAddress(newInstAddress)
-        
-        # Execute the specified function by sending a new public transaction.
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).addInstitution(checksumAddr, newInstName, newInstAddr)
-
-    # delete institution from a token's access list
-    def deleteInstitution(self, tokenAddress, instAddress):
-        #Change account address to EIP checksum format
-        checksumAddr = Web3.toChecksumAddress(tokenAddress)
-        checksumInstAddr = Web3.toChecksumAddress(instAddress)
-        
-        # Execute the specified function by sending a new public transaction.   
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).deleteInstitution(checksumAddr, checksumInstAddr)
-
     # create token and return token address
-    def createToken(self, institutionName, patientName, patientGender):
+    def createToken(self, tokenId, institutionName, patientName, patientGender):
         #Change account address to EIP checksum format
         #checksumAddr = Web3.toChecksumAddress(account_addr)
         
         # Execute the specified function by sending a new public transaction.   
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).createToken(institutionName, patientName, patientGender)
-        return ret
-
-    # check token for institution, return true or false
-    # only super institution (contract creator) can check for institution other than itself
-    def checkToken(self, tokenAddress, institutionAddress):
-        #Change account address to EIP checksum format
-        checksumAddr = Web3.toChecksumAddress(tokenAddress) 
-        checksumInstAddr = Web3.toChecksumAddress(institutionAddress)
-        
-        # Execute the specified function by sending a new public transaction.   
-        ret=self.contract.transact({'from': self.web3.eth.coinbase}).checkToken(checksumAddr, checksumInstAddr)
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).createToken(tokenId, institutionName, patientName, patientGender)
         return ret
         
-    def addNumber(self, num1, num2):
-        ret=self.contract.transact({'from': self.web3.eth.coinbase}).addNumber(num1, num2)
+    def addInstitution(self, tokenId, institutionName, ):
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).addInstitution(tokenId, institutionName, )
         return ret
-
+    
+    def deleteInstitution(self, tokenId, ):
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).deleteInstitution(tokenId, )
+        return ret
+        
+    def checkToken(self, tokenId, ):
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).checkToken(tokenId, institutionName, )
+        return ret
+        
     # Print token date, helper function
     @staticmethod
     def print_tokendata(tokenStatus):
@@ -112,11 +94,25 @@ class EHR_ACToken_Proj(object):
         address_json = json.load(open(datafile))
         return address_json[node_name]
 
+def define_and_get_arguments(args=sys.argv[1:]):
+    parser = argparse.ArgumentParser(
+        description="Run test evaulation app."
+    )
+    parser.add_argument("--test_op", type=int, default=0, 
+                        help="Execute test operation: \
+                        0-contract information, \
+                        1-queryTokenData, \
+                        2-createToken")
+
+    parser.add_argument("--tokenid", type=str, default="00", 
+                        help="input token id")
+
+    args = parser.parse_args(args=args)
+    return args
 
 if __name__ == "__main__":
-    #http_provider = 'http://localhost:8042'
-    #contract_addr = PatientACToken.getAddress('PatientACToken', './addr_list.json')
-    #contract_config = '../contracts/build/contracts/PatientACToken.json'
+
+    args = define_and_get_arguments()
 
     httpProvider = 'http://localhost:8042'
     contractAddr = EHR_ACToken_Proj.getAddress('EHR_ACToken_Proj', './addr_list.json')
@@ -125,74 +121,21 @@ if __name__ == "__main__":
     #new object
     myEHR_ACToken_Proj = EHR_ACToken_Proj(httpProvider, contractAddr, contractConfig)
 
-
-    #------------------------- test contract API ---------------------------------
-    #getAccounts
-    accounts = myEHR_ACToken_Proj.getAccounts()
-    balance = myEHR_ACToken_Proj.getBalance(accounts[0])
-    print("Host accounts: %s" %(accounts))
-    print("coinbase balance:%d" %(balance))
-    print("--------------------------------------------------------------------")
-
-    #address for contract?
-    #address for token is generated by smart contract, so save it in variable
-
-    #user_address = PatientACToken.getAddress('sam_ubuntu', './addr_list.json')
-    #patientACToken_address = PatientACToken.getAddress('PatientACToken', './addr_list.json')
-
-    newInstAddr = EHR_ACToken_Proj.getAddress('newInst', './addr_list.json')
-    differentInstAddr = EHR_ACToken_Proj.getAddress('differentInst', './addr_list.json')
-    #Are these addresses just random?
-    
-    # list Access control
-    '''json_data=TypesUtil.string_to_json(token_data[-1])
-    print("resource: %s" %(json_data['resource']))
-    print("action: %s" %(json_data['action']))
-    print("conditions: %s" %(json_data['conditions']))'''
-    
-    #structure:
-    #as the super Instituion:
-    
-    #create token, saving token address in variable (to use for below instructions)
-    patient1Name = 'Jeff'
-    patient1Gender = 'male'
-    #tokenAddress1 = myEHR_ACToken_Proj.createToken('EHR_ACToken_Proj', patient1Name, patient1Gender)
-    #print(tokenAddress1)
-    
-    aNumber = myEHR_ACToken_Proj.addNumber(10, 13)
-    print(aNumber)
-    ''' 
-    #query token data (and print it)
-    token1DataInitial = myEHR_ACToken_Proj.queryTokenData(tokenAddress1)
-    EHR_ACToken_Proj.print_tokendata(token1DataInitial)
-    
-    #add institutions (other than initial one)
-    myEHR_ACToken_Proj.addInstitution(tokenAddress1, 'newInst', newInstAddr)
-    myEHR_ACToken_Proj.addInstitution(tokenAddress1, 'differentInst', differentInstAddr)
-    
-    #check token for institutions
-    if myEHR_ACToken_Proj.checkToken(tokenAddress1, newInstAddr) == True:
-        print("Check passed")
+    tokenID = args.tokenid
+    if(args.test_op==1):
+        #--------------- show nodes latency curves--------------------
+        tokenData = myEHR_ACToken_Proj.queryTokenData(tokenID)
+        EHR_ACToken_Proj.print_tokendata(tokenData)
+    elif(args.test_op==2):
+        #--------------- create token data given id --------------------
+        patient1Name = 'Jeff'
+        patient1Gender = 'male'
+        tokenAddress1 = myEHR_ACToken_Proj.createToken(tokenID, 'EHR_ACToken_Proj', patient1Name, patient1Gender)
+        print(tokenAddress1)
     else:
-        print("Check failed")
-    
-    
-    #query token data (and print it)
-    token1DataAdd = myEHR_ACToken_Proj.queryTokenData(tokenAddress1)
-    EHR_ACToken_Proj.print_tokendata(token1DataAdd)
-    
-    #delete institutions (other than initial one)
-    myEHR_ACToken_Proj.deleteInstitution(tokenAddress1, newInstAddr)
-    
-    #check token for institutions
-    if myEHR_ACToken_Proj.checkToken(tokenAddress1, newInstAddr) == True:
-        print("Check passed")
-    else:
-        print("Check failed")
-    
-    #query token data (and print it)
-    token1DataDelete = myEHR_ACToken_Proj.queryTokenData(tokenAddress1)
-    EHR_ACToken_Proj.print_tokendata(token1DataDelete)
-    '''    
-
-pass
+        #------------------------- show contract information --------------------------------
+        #getAccounts
+        accounts = myEHR_ACToken_Proj.getAccounts()
+        balance = myEHR_ACToken_Proj.getBalance(accounts[0])
+        print("Host accounts: %s" %(accounts))
+        print("coinbase balance:%d" %(balance))

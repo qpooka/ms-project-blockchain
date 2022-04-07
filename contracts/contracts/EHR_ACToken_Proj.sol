@@ -14,13 +14,9 @@ contract EHR_ACToken_Proj {
 		basic patient information like name and gender
 	*/
 	struct AccessControlToken {
-		uint idCounter;
-		
 		string name;
 		string gender;
 		uint256 issueDate;
-		
-		// built-in dynamic array or mapping?
 		
 		// keep aligned, used to easily return a string array for query
 		string[] authInstitutionNames;
@@ -28,44 +24,30 @@ contract EHR_ACToken_Proj {
 		
 		uint institutionAmount;
 		//mapping(address => string) authorizedInstitutions;
-		
-		// should there be other fields in token?
+			
 	}
-	
-	// address is token id, that is "kinda" randomly generated
-	// 		using keccak256(id, current time, address of institution)
 	
 	mapping(address => AccessControlToken) acTokens;
 	address superInstitution;
-	uint counter;
 	
 	event OnValueChanged(address indexed _from, uint _value);
 	
 	constructor () public {
-		counter = 0;
 		superInstitution = msg.sender; //initialized with contract creator
 	}
 	
-	function addNumber(uint a, uint b) public view returns (uint) {
-		uint c = a + b;
-		return c;
-	}
-	
 	// create/initialize token, return address created
-	function createToken(string memory institutionName,
+	function createToken(string memory tokenId,
+						string memory institutionName,
 						string memory patientName,
-						string memory patientGender) public returns (bool, address) {
+						string memory patientGender) public returns (bool) {
 						
 		// check for institution that is making the check
 		// allow contract creator and institutions on the AC list
-		//bytes32 aHash = keccak256(abi.encodePacked(counter, block.timestamp, msg.sender));
-		//address newTokenIdAddress = 0xCf5609B003B2776699eEA1233F7C82D5695cC9AA;
-		//return (true, newTokenIdAddress);
+		
 		
 		if ( (msg.sender == superInstitution) ) {
-		
-			counter += 1;
-			bytes32 aHash = keccak256(abi.encodePacked(counter, block.timestamp, msg.sender));
+			bytes32 aHash = keccak256(abi.encodePacked(tokenId));
 			address newTokenIdAddress = address(uint160(uint256(aHash)));
 			
 			acTokens[newTokenIdAddress].idCounter = counter;
@@ -80,21 +62,31 @@ contract EHR_ACToken_Proj {
 			acTokens[newTokenIdAddress].institutionAmount = 1;
 			emit OnValueChanged(newTokenIdAddress, acTokens[newTokenIdAddress].institutionAmount);
 			
-			return (true, newTokenIdAddress);
+			return true;
 		}
 		else {
-			return (false, address(0)); //return dummy address
+			return false;
 		}
 		
 	}
 	
 	// find/query token, return data in token
-	function queryTokenData(address tokenIdAddress) public view returns (uint,
+	function queryTokenData(string memory tokenId) public view returns (uint,
 																	string memory,
 																	string memory,
 																	uint256,
 																	uint,
 																	string[] memory) {
+		uint idCounterN = 0;
+		string memory nameN = "";
+		string memory genderN = "";
+		uint256 issueDateN = 0;
+		uint institutionAmountN = 0;
+		string[] memory authNamesN = new string[](1);
+		
+		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
+		address tokenIdAddress = address(uint160(uint256(aHash)));
+		
 		if( (msg.sender == superInstitution) ) {
 			return(	acTokens[tokenIdAddress].idCounter,
 					acTokens[tokenIdAddress].name,
@@ -105,13 +97,6 @@ contract EHR_ACToken_Proj {
 					);
 		}
 		else {
-			uint idCounterN = 0;
-			string memory nameN = "";
-			string memory genderN = "";
-			uint256 issueDateN = 0;
-			uint institutionAmountN = 0;
-			string[] memory authNamesN = new string[](1);
-			
 			return(idCounterN,
 					nameN,
 					genderN,
@@ -120,14 +105,17 @@ contract EHR_ACToken_Proj {
 					authNamesN
 					);
 		}
-			
 	}
 	
 	// add to AC list in token
 	// input - tokenID, new institution for AC list, id of institution adding to AC list
-	function addInstitution(address tokenIdAddress,
+	function addInstitution(string memory tokenId,
 						string memory newInstitutionName,
 						address newInstitutionAddress) public returns (bool) {
+		
+		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
+		address tokenIdAddress = address(uint160(uint256(aHash)));
+		
 		if( (msg.sender == superInstitution)	) {				
 			// acTokens[tokenIdAddress].authorizedInstitutions[msg.sender] = newInstitutionName;
 			
@@ -145,11 +133,14 @@ contract EHR_ACToken_Proj {
 	}
 	
 	//delete institution in AC list
-	function deleteInstitution(address tokenIdAddress,
+	function deleteInstitution(string memory tokenId,
 								address instAddress) public returns (bool) {
 		
+		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
+		address tokenIdAddress = address(uint160(uint256(aHash)));
+		
 		if( (msg.sender == superInstitution)	) {
-			(, uint index) = findInstitution(tokenIdAddress, instAddress);
+			(, uint index) = findInstitution(tokenId, instAddress);
 			
 			uint end = acTokens[tokenIdAddress].institutionAmount - 1;
 			acTokens[tokenIdAddress].authInstitutionNames[index] = acTokens[tokenIdAddress].authInstitutionNames[end];
@@ -168,12 +159,12 @@ contract EHR_ACToken_Proj {
 	}
 	
 	// check token for institution, return true or false
-	function checkToken(address tokenIdAddress,
+	function checkToken(string memory tokenId,
 						address institutionAddress) public view returns (bool) {
 		
-		(bool qualified,) = findInstitution(tokenIdAddress, msg.sender);
+		(bool qualified,) = findInstitution(tokenId, msg.sender);
 		if( (msg.sender == superInstitution) || (qualified == true) ) {
-			(bool find,) = findInstitution(tokenIdAddress, institutionAddress);
+			(bool find,) = findInstitution(tokenId, institutionAddress);
 			return find;
 		}
 		else {
@@ -184,9 +175,12 @@ contract EHR_ACToken_Proj {
 	// tx.origin vs msg.sender
 	
 	// helper function to find institution
-	function findInstitution(address tokenIdAddress,
+	function findInstitution(string memory tokenId,
 							 address instAddress) private view returns (bool, uint) {
-							 
+		
+		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
+		address tokenIdAddress = address(uint160(uint256(aHash)));
+		
 		uint limit = acTokens[tokenIdAddress].institutionAmount;
 		
 		for(uint i = 0; i < limit; i++) {
