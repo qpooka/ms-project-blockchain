@@ -61,16 +61,17 @@ class EHR_ACToken_Proj(object):
         ret = self.contract.transact({'from': self.web3.eth.coinbase}).createToken(tokenId, institutionName, patientName, patientGender)
         return ret
         
-    def addInstitution(self, tokenId, institutionName, ):
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).addInstitution(tokenId, institutionName, )
+    # addresses are inputed as string    
+    def addInstitution(self, tokenId, institutionName, newInstitutionAddr):
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).addInstitution(tokenId, institutionName, newInstitutionAddr)
         return ret
     
-    def deleteInstitution(self, tokenId, ):
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).deleteInstitution(tokenId, )
+    def deleteInstitution(self, tokenId, instAddr):
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).deleteInstitution(tokenId, instAddr)
         return ret
         
-    def checkToken(self, tokenId, ):
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).checkToken(tokenId, institutionName, )
+    def checkToken(self, tokenId, institutionAddr):
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).checkToken(tokenId, institutionAddr)
         return ret
         
     # Print token date, helper function
@@ -130,8 +131,8 @@ if __name__ == "__main__":
         #--------------- create token data given id --------------------
         patient1Name = 'Jeff'
         patient1Gender = 'male'
-        tokenAddress1 = myEHR_ACToken_Proj.createToken(tokenID, 'EHR_ACToken_Proj', patient1Name, patient1Gender)
-        print(tokenAddress1)
+        createdTokenYoN = myEHR_ACToken_Proj.createToken(tokenID, 'EHR_ACToken_Proj', patient1Name, patient1Gender)
+        print(createdTokenYoN)
     else:
         #------------------------- show contract information --------------------------------
         #getAccounts

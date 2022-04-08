@@ -39,6 +39,7 @@ contract EHR_ACToken_Proj {
 	// create/initialize token, return address created
 	function createToken(string memory tokenId,
 						string memory institutionName,
+						string memory institutionAddr,
 						string memory patientName,
 						string memory patientGender) public returns (bool) {
 						
@@ -50,11 +51,13 @@ contract EHR_ACToken_Proj {
 			bytes32 aHash = keccak256(abi.encodePacked(tokenId));
 			address newTokenIdAddress = address(uint160(uint256(aHash)));
 			
-			acTokens[newTokenIdAddress].idCounter = counter;
-			
 			// acTokens[newTokenIdAddress].authorizedInstitutions[msg.sender] = institutionName;
+			
+			bytes32 tempInstAddr = keccak256(abi.encodePacked(institutionAddr));
+			address newInstAddr = address(uint160(uint256(tempInstAddr)));
+			
 			acTokens[newTokenIdAddress].authInstitutionNames.push(institutionName);
-			acTokens[newTokenIdAddress].authInstitutions.push(msg.sender);
+			acTokens[newTokenIdAddress].authInstitutions.push(newInstAddr);
 			
 			acTokens[newTokenIdAddress].name = patientName;
 			acTokens[newTokenIdAddress].gender = patientGender;
@@ -71,13 +74,13 @@ contract EHR_ACToken_Proj {
 	}
 	
 	// find/query token, return data in token
-	function queryTokenData(string memory tokenId) public view returns (uint,
+	function queryTokenData(string memory tokenId) public view returns (
 																	string memory,
 																	string memory,
 																	uint256,
 																	uint,
 																	string[] memory) {
-		uint idCounterN = 0;
+		
 		string memory nameN = "";
 		string memory genderN = "";
 		uint256 issueDateN = 0;
@@ -88,8 +91,7 @@ contract EHR_ACToken_Proj {
 		address tokenIdAddress = address(uint160(uint256(aHash)));
 		
 		if( (msg.sender == superInstitution) ) {
-			return(	acTokens[tokenIdAddress].idCounter,
-					acTokens[tokenIdAddress].name,
+			return( acTokens[tokenIdAddress].name,
 					acTokens[tokenIdAddress].gender,
 					acTokens[tokenIdAddress].issueDate,
 					acTokens[tokenIdAddress].institutionAmount,
@@ -97,8 +99,7 @@ contract EHR_ACToken_Proj {
 					);
 		}
 		else {
-			return(idCounterN,
-					nameN,
+			return( nameN,
 					genderN,
 					issueDateN,
 					institutionAmountN,
@@ -109,14 +110,18 @@ contract EHR_ACToken_Proj {
 	
 	// add to AC list in token
 	// input - tokenID, new institution for AC list, id of institution adding to AC list
+	// newInstitutionAddr should correcpond to address of account
 	function addInstitution(string memory tokenId,
 						string memory newInstitutionName,
-						address newInstitutionAddress) public returns (bool) {
+						string memory newInstitutionAddr) public returns (bool) {
 		
 		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
 		address tokenIdAddress = address(uint160(uint256(aHash)));
 		
-		if( (msg.sender == superInstitution)	) {				
+		bytes32 temp = keccak256(abi.encodePacked(newInstitutionAddr));
+		address newInstitutionAddress = address(uint160(uint256(temp)));
+		
+		if( (msg.sender == superInstitution) ) {				
 			// acTokens[tokenIdAddress].authorizedInstitutions[msg.sender] = newInstitutionName;
 			
 			acTokens[tokenIdAddress].authInstitutionNames.push(newInstitutionName);
@@ -134,10 +139,13 @@ contract EHR_ACToken_Proj {
 	
 	//delete institution in AC list
 	function deleteInstitution(string memory tokenId,
-								address instAddress) public returns (bool) {
+								string memory instAddr) public returns (bool) {
 		
 		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
 		address tokenIdAddress = address(uint160(uint256(aHash)));
+		
+		bytes32 temp = keccak256(abi.encodePacked(instAddr));
+		address instAddress = address(uint160(uint256(temp)));
 		
 		if( (msg.sender == superInstitution)	) {
 			(, uint index) = findInstitution(tokenId, instAddress);
@@ -160,12 +168,14 @@ contract EHR_ACToken_Proj {
 	
 	// check token for institution, return true or false
 	function checkToken(string memory tokenId,
-						address institutionAddress) public view returns (bool) {
+						string memory institutionAddr) public view returns (bool) {
 		
-		(bool qualified,) = findInstitution(tokenId, msg.sender);
+		bytes32 temp = keccak256(abi.encodePacked(institutionAddr));
+		address institutionAddress = address(uint160(uint256(temp)));
+		
+		(bool qualified,) = findInstitution(tokenId, institutionAddress);
 		if( (msg.sender == superInstitution) || (qualified == true) ) {
-			(bool find,) = findInstitution(tokenId, institutionAddress);
-			return find;
+			return qualified;
 		}
 		else {
 			return false;
