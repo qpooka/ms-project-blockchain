@@ -53,12 +53,12 @@ class EHR_ACToken_Proj(object):
         return tokenData
 
     # create token and return token address
-    def createToken(self, tokenId, institutionName, patientName, patientGender):
+    def createToken(self, tokenId, institutionName, institutionAddr, patientName, patientGender):
         #Change account address to EIP checksum format
         #checksumAddr = Web3.toChecksumAddress(account_addr)
         
         # Execute the specified function by sending a new public transaction.   
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).createToken(tokenId, institutionName, patientName, patientGender)
+        ret = self.contract.transact({'from': self.web3.eth.coinbase}).createToken(tokenId, institutionName, institutionAddr, patientName, patientGender)
         return ret
         
     # addresses are inputed as string    
@@ -70,20 +70,21 @@ class EHR_ACToken_Proj(object):
         ret = self.contract.transact({'from': self.web3.eth.coinbase}).deleteInstitution(tokenId, instAddr)
         return ret
         
-    def checkToken(self, tokenId, institutionAddr):
-        ret = self.contract.transact({'from': self.web3.eth.coinbase}).checkToken(tokenId, institutionAddr)
-        return ret
+    def checkToken(self, tokenId, instrAddr):
+        retval = self.contract.call({'from': self.web3.eth.coinbase}).checkToken(tokenId, instrAddr)
+        return retval
         
     # Print token date, helper function
     @staticmethod
     def print_tokendata(tokenStatus):
         #print token status
         for i in range(0,len(tokenStatus)):
-            if(i == 4 or i == 5):
-                print(tokenStatus[i])
-                # dt=DatetimeUtil.timestamp_datetime(tokenStatus[i])
+            if(i == 3):
+                print("here:")
+                print((tokenStatus[i]))
+                #dt=DatetimeUtil.timestamp_datetime(tokenStatus[i])
                 #dt=datetime.datetime.utcfromtimestamp(token_data[i]/1e3)
-                # print(DatetimeUtil.datetime_string(dt))
+                #print(DatetimeUtil.datetime_string(dt))
                 #print(DatetimeUtil.datetime_timestamp(dt))
                 #print(token_data[i])
             else:
@@ -103,10 +104,15 @@ def define_and_get_arguments(args=sys.argv[1:]):
                         help="Execute test operation: \
                         0-contract information, \
                         1-queryTokenData, \
-                        2-createToken")
+                        2-createToken, \
+                        3-checkToken, \
+                        4-addInstitution, \
+                        5-deleteInstitution")
 
     parser.add_argument("--tokenid", type=str, default="00", 
                         help="input token id")
+                        
+    #parser.add_argument("--instAddr", type=str, default="00", help="input inst address")
 
     args = parser.parse_args(args=args)
     return args
@@ -122,17 +128,54 @@ if __name__ == "__main__":
     #new object
     myEHR_ACToken_Proj = EHR_ACToken_Proj(httpProvider, contractAddr, contractConfig)
 
+    newInstAddr = EHR_ACToken_Proj.getAddress('newInst', './addr_list.json')
+    diffInstAddr = EHR_ACToken_Proj.getAddress('differentInst', './addr_list.json')
+
     tokenID = args.tokenid
+    #instADDR = args.instAddr
+    
     if(args.test_op==1):
         #--------------- show nodes latency curves--------------------
         tokenData = myEHR_ACToken_Proj.queryTokenData(tokenID)
         EHR_ACToken_Proj.print_tokendata(tokenData)
+        
     elif(args.test_op==2):
         #--------------- create token data given id --------------------
         patient1Name = 'Jeff'
         patient1Gender = 'male'
-        createdTokenYoN = myEHR_ACToken_Proj.createToken(tokenID, 'EHR_ACToken_Proj', patient1Name, patient1Gender)
-        print(createdTokenYoN)
+        myEHR_ACToken_Proj.createToken(tokenID, 'EHR_ACToken_Proj', contractAddr, patient1Name, patient1Gender)
+        
+    elif(args.test_op == 3):
+        #check token for institutions
+        tokenExist1 = bool(myEHR_ACToken_Proj.checkToken(tokenID, contractAddr))
+        if tokenExist1 == True:
+            print("Yes, super institution is in AC list")
+        else:
+            print("Not in AC list")
+        
+        tokenExist2 = (myEHR_ACToken_Proj.checkToken(tokenID, newInstAddr))
+        if tokenExist2 == True:
+            print("Yes, newInst is in AC list")
+        else:
+            print("Not in AC list")
+            
+        tokenExist3 = (myEHR_ACToken_Proj.checkToken(tokenID, diffInstAddr))
+        if tokenExist3 == True:
+            print("Yes, differentInst is in AC list")
+        else:
+            print("Not in AC list")
+        
+        
+    elif(args.test_op == 4):
+        #add institutions
+        myEHR_ACToken_Proj.addInstitution(tokenID, "newInst", newInstAddr)
+        myEHR_ACToken_Proj.addInstitution(tokenID, "differentInst", diffInstAddr)
+        
+    elif(args.test_op == 5):
+        #delete institutions
+        myEHR_ACToken_Proj.deleteInstitution(tokenID, newInstAddr)
+        #myEHR_ACToken_Proj.deleteInstitution(tokenID, diffInstAddr)
+        
     else:
         #------------------------- show contract information --------------------------------
         #getAccounts

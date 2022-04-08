@@ -16,13 +16,13 @@ contract EHR_ACToken_Proj {
 	struct AccessControlToken {
 		string name;
 		string gender;
-		uint256 issueDate;
+		// uint256 issueDate;
 		
 		// keep aligned, used to easily return a string array for query
 		string[] authInstitutionNames;
 		address[] authInstitutions;
 		
-		uint institutionAmount;
+		uint8 institutionAmount;
 		//mapping(address => string) authorizedInstitutions;
 			
 	}
@@ -30,7 +30,7 @@ contract EHR_ACToken_Proj {
 	mapping(address => AccessControlToken) acTokens;
 	address superInstitution;
 	
-	event OnValueChanged(address indexed _from, uint _value);
+	event OnValueChanged(address indexed _from, uint8 _value);
 	
 	constructor () public {
 		superInstitution = msg.sender; //initialized with contract creator
@@ -61,7 +61,7 @@ contract EHR_ACToken_Proj {
 			
 			acTokens[newTokenIdAddress].name = patientName;
 			acTokens[newTokenIdAddress].gender = patientGender;
-			acTokens[newTokenIdAddress].issueDate = block.timestamp;
+			// acTokens[newTokenIdAddress].issueDate = block.timestamp;
 			acTokens[newTokenIdAddress].institutionAmount = 1;
 			emit OnValueChanged(newTokenIdAddress, acTokens[newTokenIdAddress].institutionAmount);
 			
@@ -77,14 +77,13 @@ contract EHR_ACToken_Proj {
 	function queryTokenData(string memory tokenId) public view returns (
 																	string memory,
 																	string memory,
-																	uint256,
-																	uint,
+																	uint8,
 																	string[] memory) {
 		
 		string memory nameN = "";
 		string memory genderN = "";
-		uint256 issueDateN = 0;
-		uint institutionAmountN = 0;
+		// uint256 issueDateN = 0;
+		uint8 institutionAmountN = 0;
 		string[] memory authNamesN = new string[](1);
 		
 		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
@@ -93,7 +92,7 @@ contract EHR_ACToken_Proj {
 		if( (msg.sender == superInstitution) ) {
 			return( acTokens[tokenIdAddress].name,
 					acTokens[tokenIdAddress].gender,
-					acTokens[tokenIdAddress].issueDate,
+					// acTokens[tokenIdAddress].issueDate,
 					acTokens[tokenIdAddress].institutionAmount,
 					acTokens[tokenIdAddress].authInstitutionNames
 					);
@@ -101,7 +100,7 @@ contract EHR_ACToken_Proj {
 		else {
 			return( nameN,
 					genderN,
-					issueDateN,
+					// issueDateN,
 					institutionAmountN,
 					authNamesN
 					);
@@ -127,7 +126,7 @@ contract EHR_ACToken_Proj {
 			acTokens[tokenIdAddress].authInstitutionNames.push(newInstitutionName);
 			acTokens[tokenIdAddress].authInstitutions.push(newInstitutionAddress);
 			
-			acTokens[tokenIdAddress].institutionAmount = acTokens[tokenIdAddress].institutionAmount + 1;
+			acTokens[tokenIdAddress].institutionAmount += 1;
 			emit OnValueChanged(tokenIdAddress, acTokens[tokenIdAddress].institutionAmount);
 			
 			return true;
@@ -156,7 +155,7 @@ contract EHR_ACToken_Proj {
 			delete acTokens[tokenIdAddress].authInstitutionNames[end];
 			delete acTokens[tokenIdAddress].authInstitutions[end];
 			
-			acTokens[tokenIdAddress].institutionAmount = acTokens[tokenIdAddress].institutionAmount - 1;
+			acTokens[tokenIdAddress].institutionAmount -= 1;
 			emit OnValueChanged(tokenIdAddress, acTokens[tokenIdAddress].institutionAmount);
 			
 			return true;
@@ -174,12 +173,8 @@ contract EHR_ACToken_Proj {
 		address institutionAddress = address(uint160(uint256(temp)));
 		
 		(bool qualified,) = findInstitution(tokenId, institutionAddress);
-		if( (msg.sender == superInstitution) || (qualified == true) ) {
-			return qualified;
-		}
-		else {
-			return false;
-		}
+		return qualified;
+		
 	}
 	
 	// tx.origin vs msg.sender
@@ -191,15 +186,16 @@ contract EHR_ACToken_Proj {
 		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
 		address tokenIdAddress = address(uint160(uint256(aHash)));
 		
-		uint limit = acTokens[tokenIdAddress].institutionAmount;
+		uint8 limit = acTokens[tokenIdAddress].institutionAmount;
 		
-		for(uint i = 0; i < limit; i++) {
+		for(uint8 i = 0; i < limit; i++) {
 			if(acTokens[tokenIdAddress].authInstitutions[i] == instAddress) {
 				return (true, i);
 			}
 		}
 		return (false, 0);
 	}
+	
 }
 
 // only 1 institution can add, delete, and see all token data
