@@ -80,8 +80,8 @@ class EHR_ACToken_Proj(object):
         #print token status
         for i in range(0,len(tokenStatus)):
             if(i == 3):
-                print("here:")
-                print((tokenStatus[i]))
+                tokenString = str(tokenStatus[i])
+                print(tokenString.split(','))
                 #dt=DatetimeUtil.timestamp_datetime(tokenStatus[i])
                 #dt=datetime.datetime.utcfromtimestamp(token_data[i]/1e3)
                 #print(DatetimeUtil.datetime_string(dt))

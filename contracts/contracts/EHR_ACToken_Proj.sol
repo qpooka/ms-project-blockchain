@@ -1,8 +1,6 @@
 pragma solidity >=0.4.22 <0.9.0;
-pragma experimental ABIEncoderV2; //natively supported on later solidity versions
-//SPDX-License-Identifier: GPL-3.0
 
-// issue - returning dynamic string array is not well supported on earlier solidity versions
+//SPDX-License-Identifier: GPL-3.0
 
 contract EHR_ACToken_Proj {
 
@@ -46,10 +44,22 @@ contract EHR_ACToken_Proj {
 		// check for institution that is making the check
 		// allow contract creator and institutions on the AC list
 		
+		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
+		address newTokenIdAddress = address(uint160(uint256(aHash)));
+		
+		// check if token is empty
+		// if not empty, don't try to "make" a new one
+		
+		bytes memory nameBytes = bytes(acTokens[newTokenIdAddress].name);
+		bytes memory genderBytes = bytes(acTokens[newTokenIdAddress].gender);
+		
+		if( (acTokens[newTokenIdAddress].institutionAmount != 0) || 
+			(nameBytes.length != 0) ||
+			(genderBytes.length != 0) ) {
+			return false;
+		}
 		
 		if ( (msg.sender == superInstitution) ) {
-			bytes32 aHash = keccak256(abi.encodePacked(tokenId));
-			address newTokenIdAddress = address(uint160(uint256(aHash)));
 			
 			// acTokens[newTokenIdAddress].authorizedInstitutions[msg.sender] = institutionName;
 			
@@ -78,33 +88,38 @@ contract EHR_ACToken_Proj {
 																	string memory,
 																	string memory,
 																	uint8,
-																	string[] memory) {
+																	string memory) {
 		
 		string memory nameN = "";
 		string memory genderN = "";
 		// uint256 issueDateN = 0;
 		uint8 institutionAmountN = 0;
-		string[] memory authNamesN = new string[](1);
+		string memory authInstitutionNamesN = "";
 		
 		bytes32 aHash = keccak256(abi.encodePacked(tokenId));
 		address tokenIdAddress = address(uint160(uint256(aHash)));
 		
 		if( (msg.sender == superInstitution) ) {
-			return( acTokens[tokenIdAddress].name,
-					acTokens[tokenIdAddress].gender,
-					// acTokens[tokenIdAddress].issueDate,
-					acTokens[tokenIdAddress].institutionAmount,
-					acTokens[tokenIdAddress].authInstitutionNames
-					);
+			nameN = acTokens[tokenIdAddress].name;
+			genderN = acTokens[tokenIdAddress].gender;
+			institutionAmountN = acTokens[tokenIdAddress].institutionAmount;
+			// authInstitutionNamesN = acTokens[tokenIdAddress].authInstitutionNames;
+			// concatenate elements of authInstitutionNames to a string
+			for(uint8 i = 0; i < institutionAmountN; i++) {
+				authInstitutionNamesN = string(abi.encodePacked(authInstitutionNamesN,
+																acTokens[tokenIdAddress].authInstitutionNames[i]));
+				// add split char ,
+				if(i<institutionAmountN-1){
+					authInstitutionNamesN = string(abi.encodePacked(authInstitutionNamesN,","));
+				}
+			}
 		}
-		else {
-			return( nameN,
-					genderN,
-					// issueDateN,
-					institutionAmountN,
-					authNamesN
-					);
-		}
+		return( nameN,
+				genderN,
+				// issueDateN,
+				institutionAmountN,
+				authInstitutionNamesN
+				);
 	}
 	
 	// add to AC list in token
@@ -146,8 +161,10 @@ contract EHR_ACToken_Proj {
 		bytes32 temp = keccak256(abi.encodePacked(instAddr));
 		address instAddress = address(uint160(uint256(temp)));
 		
-		if( (msg.sender == superInstitution)	) {
-			(, uint index) = findInstitution(tokenId, instAddress);
+		(bool found, uint index) = findInstitution(tokenId, instAddress);
+		
+		if( (msg.sender == superInstitution) && (found == true)	) {
+			
 			
 			uint end = acTokens[tokenIdAddress].institutionAmount - 1;
 			acTokens[tokenIdAddress].authInstitutionNames[index] = acTokens[tokenIdAddress].authInstitutionNames[end];
