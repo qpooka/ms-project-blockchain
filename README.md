@@ -1,3 +1,3 @@
 # ms-project-blockchain
 
-Currently changing smart contract parameters and adding+changing corresponding python wrapper.
+Finished testing SC and wrapper. Now working on Python application.
