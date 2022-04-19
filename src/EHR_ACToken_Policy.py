@@ -57,10 +57,12 @@ class EHR_ACToken_Policy(object):
     # should it check both SC and local db_layer? though, SC still has priority
     @staticmethod
     def check_token(tokenID, instrAddr):
+        ret = False
         ret = mytoken.checkToken(tokenID, instrAddr)
         return ret
     
     #check db_layer for institution in registry table
+    @staticmethod
     def check_institution_registry(institutionName):
         ret = False
         path_db = 'REGD.db'
@@ -70,6 +72,11 @@ class EHR_ACToken_Policy(object):
             
         return ret
         
+    @staticmethod
+    def is_access_request_valid(req_args):
+    
+    
+    
 
 	# check token status, like status flag, issue and expire time.
 	@staticmethod

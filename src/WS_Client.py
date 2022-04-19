@@ -54,19 +54,6 @@ class WSClient(object):
     #   delete : patient row, institution registry row, EHR row
     
     
-    '''
-    Get all dataset
-    '''
-    @staticmethod
-    def Get_Datasets(api_url, data_args={}):          
-        headers = {'Content-Type' : 'application/json'}
-        response = requests.get(api_url, data=json.dumps(data_args), headers=headers)
-        
-        #get response json
-        json_response = response.json()      
-
-        return json_response
-    
     #create/post new patient entry/token into database and SC
     #SC call doesn't return anything
     #data input has name, gender, tokenID, institutionName, institutionAddress
@@ -136,6 +123,12 @@ def test_get(data_args = {}):
     #print(WSClient.Get_EHRbyTokenID('http://128.226.78.89/test/api/v1.0/dt/EHR', params, data_args))
     EHR = WSClient.Get_EHRbyTokenID('http://0.0.0.0:1801/test/api/v1.0/dt/EHR', params, data_args)
     print(EHR)
+
+def test_create_entries(data_args = {}):
+    
+    #resp = WSClient.Create_PatientEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/patient_entry', data_args)
+    resp = WSClient.Create_InstitutionRegistryEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/inst_reg', data_args)
+    print(resp)
 
 def test_search(data_args={}):
     params={}

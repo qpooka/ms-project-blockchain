@@ -89,10 +89,59 @@ def get_TokenIdByName():
 	#if(request.data=='{}'):
 	#	abort(401, {'message': 'Token missing, deny access'})
     
+    
+    
     patientName = request.args.get('Name', default = 1, type = str)
     patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
     tokenID = patientEntry[0]['TokenID']
     return jsonify({'TokenID' : tokenID}), 201
+    
+#POST req
+@app.route('/test/api/v1.0/dt/create/patient_entry', methods=['POST'])
+def create_patient_entry():
+	#Token missing, deny access
+	req_data = json.loads(request.data)
+	if('Name' not in req_data):
+		abort(401, {'message': 'Token missing, deny access'})
+	
+	#Authorization process
+	'''if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Authorization fail, deny access'})'''
+		
+	if not request.json:
+		abort(400, {'message': 'No data in parameter for operation.'})
+
+	proj_json = req_data['project_data']
+    
+    #call SC to add patient token
+    #call db to add patient entry into PACD database
+	
+	#return jsonify({'project_data': project}), 201
+	return jsonify({'result': 'Succeed'}), 201    
+    
+#POST req
+@app.route('/test/api/v1.0/dt/create/inst_reg', methods=['POST'])
+def create_institution_registry():
+	#Token missing, deny access
+	req_data = json.loads(request.data)
+	if('Name' not in req_data):
+		abort(401, {'message': 'Token missing, deny access'})
+	
+    #what authorization to include? this wouldn't involve SC
+    
+	#Authorization process
+	'''if(not CapPolicy.is_valid_access_request(request)):
+		abort(401, {'message': 'Authorization fail, deny access'})'''
+		
+	if not request.json:
+		abort(400, {'message': 'No data in parameter for operation.'})
+
+	#proj_json = req_data['project_data']
+	
+    #call to db_layer to add entry into REGD.db database
+    RegistrationManager.insert_entry('REGD.db', req_data)
+    
+	return jsonify({'result': 'Succeed'}), 201     
 
 #GET req
 @app.route('/test/api/v1.0/dt', methods=['GET'])
