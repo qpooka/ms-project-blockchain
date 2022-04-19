@@ -12,9 +12,12 @@ import datetime
 import json
 from flask import Flask, jsonify
 from flask import abort,make_response,request
-from BlendCapAC_Policy import CapPolicy
-from RBAC_Policy import RBACPolicy
-from ABAC_Policy import ABACPolicy
+#from BlendCapAC_Policy import CapPolicy
+#from RBAC_Policy import RBACPolicy
+#from ABAC_Policy import ABACPolicy
+
+from db_layer import *
+from EHR_ACToken_Proj import EHR_ACToken_Proj
 
 app = Flask(__name__)
 
@@ -67,6 +70,31 @@ def access_deny(error):
 	
 #========================================== Request handler ===============================================
 #GET req
+@app.route('/test/api/v1.0/dt/EHR', methods=['GET'])
+def get_EHRbyTokenID():
+    #Token missing, deny access
+	#if(request.data=='{}'):
+	#	abort(401, {'message': 'Token missing, deny access'})
+    tokenID = request.args.get('Name', default = 1, type = str)
+    patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
+    tokenID = patientEntry[0]['TokenID']
+    return jsonify({'TokenID' : tokenID}), 201
+    
+    return 
+    
+#GET req
+@app.route('/test/api/v1.0/dt/TokenID', methods=['GET'])
+def get_TokenIdByName():
+    #Token missing, deny access
+	#if(request.data=='{}'):
+	#	abort(401, {'message': 'Token missing, deny access'})
+    
+    patientName = request.args.get('Name', default = 1, type = str)
+    patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
+    tokenID = patientEntry[0]['TokenID']
+    return jsonify({'TokenID' : tokenID}), 201
+
+#GET req
 @app.route('/test/api/v1.0/dt', methods=['GET'])
 def get_projects():
 	#Token missing, deny access
@@ -76,8 +104,8 @@ def get_projects():
 	#Authorization process
 	#if(not CapPolicy.is_valid_access_request(request)):
 	#if(not RBACPolicy.is_valid_access_request(request)):
-	if(not ABACPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})
+	#if(not ABACPolicy.is_valid_access_request(request)):
+	#	abort(401, {'message': 'Authorization fail, deny access'})
 	return jsonify({'result': 'Succeed', 'projects': projects}), 201
 	
 #GET req for specific ID
@@ -90,8 +118,8 @@ def get_project():
 	#Authorization process
 	#if(not CapPolicy.is_valid_access_request(request)):
 	#if(not RBACPolicy.is_valid_access_request(request)):
-	if(not ABACPolicy.is_valid_access_request(request)):
-		abort(401, {'message': 'Authorization fail, deny access'})
+	#if(not ABACPolicy.is_valid_access_request(request)):
+	#	abort(401, {'message': 'Authorization fail, deny access'})
 	#print request.data
 	project_id = request.args.get('project_id', default = 1, type = int)
 	#project_id = int(request.args['project_id'])
@@ -205,4 +233,4 @@ def delete_project():
 	return jsonify({'result': 'Succeed'}), 201
 	
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=80, debug=True)
+    app.run(host='0.0.0.0', port=1801, debug=True)

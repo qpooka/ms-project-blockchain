@@ -63,8 +63,8 @@ class EHR_ACToken_Policy(object):
     #check db_layer for institution in registry table
     def check_institution_registry(institutionName):
         ret = False
-        path_db = ''
-        reg_entry = RegistrationManager.select_ByName()
+        path_db = 'REGD.db'
+        reg_entry = RegistrationManager.select_ByName(path_db, institutionName)
         if institutionName in reg_entry:
             ret = True
             

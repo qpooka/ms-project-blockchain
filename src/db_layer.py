@@ -78,7 +78,6 @@ class PatientACManager(object):
     def select_ByName(path_db, patient_name):
         conn = sqlite3.connect(path_db)
         
-        
         conn.row_factory = dict_factory
         cursor = conn.execute("SELECT Name, Gender, TokenID, InstitutionName, InstitutionAddress from PatientACdata where Name='%s';" %(patient_name))
         
@@ -215,15 +214,92 @@ class RegistrationManager(object):
             #create table
             conn.execute("CREATE TABLE RegistryData \
                         (Name                      TEXT PRIMARY KEY, \
-                         SC_Address                  TEXT NULL,        \
-                                                TEXT NULL,        \
-                                                TEXT NULL,        \
-                                         TEXT NULL,        \
-                                          TEXT NULL,        \
-                                            TEXT NULL);")
+                         SC_Address                  TEXT NULL);")
         else:
             print("Table: Registry data already exists.")
     
+         
+    #Select all record from table
+    @staticmethod       
+    def select_Allentry(path_db):
+        conn = sqlite3.connect(path_db) 
+        conn.row_factory = dict_factory
+        cursor = conn.execute("SELECT * from RegistryData;")
+
+        ls_result=[]
+        for row in cursor:  
+            ls_result.append(row)
+
+        conn.close()
+        
+        return ls_result
+
+    #Select record from table based on Name
+    #returns a list
+    @staticmethod       
+    def select_ByName(path_db, institution_name):
+        conn = sqlite3.connect(path_db)
+        
+        conn.row_factory = dict_factory
+        cursor = conn.execute("SELECT * from RegistryData where Name='%s';" %(institution_name))
+        
+        ls_result=[]        
+        for row in cursor:
+            ls_result.append(row)
+            
+        conn.close()
+        
+        return ls_result
+        
+    #Select record from table based on SC_Address
+    #returns a list
+    @staticmethod       
+    def select_ByAddress(path_db, institution_address):
+        conn = sqlite3.connect(path_db)
+        
+        conn.row_factory = dict_factory
+        cursor = conn.execute("SELECT * from RegistryData where SC_Address='%s';" %(institution_address))
+        
+        ls_result=[]        
+        for row in cursor:
+            ls_result.append(row)
+            
+        conn.close()
+        
+        return ls_result
+    
+    #Insert institution entry into RegistryData
+    @staticmethod   
+    def insert_entry(path_db, arg_list):    
+        conn = sqlite3.connect(path_db)
+
+        #check if user name already exist
+        user_entry = RegistrationManager.select_ByName(path_db, arg_list[0])
+        if len(user_entry) > 0:
+            print("%s already exists!" %(arg_list[0]))
+        else:             
+            conn.execute("INSERT INTO RegistryData (Name, SC_Address) VALUES ('%s','%s');" \
+                %(arg_list[0], arg_list[1]));
+
+            conn.commit()
+        conn.close()
+    
+    #Delete institution from RegistryData based on Name
+    @staticmethod       
+    def delete_ByName(path_db, institution_name):
+        conn = sqlite3.connect(path_db)
+
+        conn.execute("DELETE from RegistryData where Name = '%s';" %(institution_name))
+        conn.commit()
+        
+        conn.close()
+    
+    #Remove table
+    #for restarting local db
+    def remove_table(db_path):
+        conn = sqlite3.connect(db_path)
+        #remove selected table
+        cursor = conn.execute("DROP TABLE RegistryData;")
 
 # for institutions' dummy EHR data
 # a local db, so only the instiution in charge of these EHRs has access to local
@@ -319,7 +395,7 @@ class EHR_Manager(object):
         else:             
             conn.execute("INSERT INTO EHRdata (Name, Gender, Age, SSN, Medication, Allergies, Address) \
                             VALUES ('%s','%s','%s','%s','%s','%s','%s');" \
-                %(arg_list[0], arg_list[1], arg_list[2], arg_list[3], arg_list[4], arg_list[5], arg_lis[6]));
+                %(arg_list[0], arg_list[1], arg_list[2], arg_list[3], arg_list[4], arg_list[5], arg_list[6]));
 
             conn.commit()
         conn.close()
@@ -351,7 +427,29 @@ class EHR_Manager(object):
         conn.commit()
         
         conn.close()
-       
+      
+def init_patient():
+    #test Api
+    path_db='PACD.db'
+    
+    # new patient AC table 
+    PatientACManager.create_table(path_db)
+    #PatientACManager.remove_table(path_db)
+
+    # test insert user data
+    patient_arg1 = ['Jeff', 'male', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg2 = ['Alice', 'female', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    PatientACManager.insert_entry(path_db, patient_arg1)
+    PatientACManager.insert_entry(path_db, patient_arg2)
+
+    #search test
+    print("------search tests after inserting new patient entries-------")
+    patients_list = PatientACManager.select_Allentry(path_db)
+    print(patients_list)
+    patients_entry = PatientACManager.select_ByName(path_db,'Jeff')
+    print(patients_entry)
+    print()
+      
 def test_patient():
     #test Api
     path_db='PACD.db'
@@ -401,6 +499,32 @@ def test_patient():
     patients_list = PatientACManager.select_Allentry(path_db)
     print(patients_list)
 
+def test_registry():
+    #test Api
+    path_db='REGD.db'
+    
+    # new RegistryData table 
+    RegistrationManager.create_table(path_db)
+    #RegistrationManager.remove_table(path_db)
+
+    # test insert EHR data
+    registry_arg1 = ["newInst", "0xa7d094a545a59610a9ef9f36afb4d640d3140cd6"]
+    registry_arg2 = ["differentInst", "0x6e8df907de0c1bb5a6d32a21ff0042fbef0c05d0"]
+    registry_arg3 = ["EHR_ACToken_Proj", "0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f"]
+    RegistrationManager.insert_entry(path_db, registry_arg1)
+    RegistrationManager.insert_entry(path_db, registry_arg2)
+    RegistrationManager.insert_entry(path_db, registry_arg3)
+    
+    #search test
+    print("------search tests after inserting new registry entries-------")
+    registry_list = RegistrationManager.select_Allentry(path_db)
+    print(registry_list)
+    registry_name_entry = RegistrationManager.select_ByName(path_db,'EHR_ACToken_Proj')
+    print(registry_name_entry) #should print EHR_ACToken_Proj
+    registry_address_entry = RegistrationManager.select_ByAddress(path_db,'0x6e8df907de0c1bb5a6d32a21ff0042fbef0c05d0')
+    print(registry_address_entry) #should print differentInst
+    print()
+
 def test_EHR():
     #test Api
     path_db='EHRD.db'
@@ -427,5 +551,8 @@ def test_EHR():
 
 if __name__ == '__main__': 
     #test_patient()
+    init_patient()
     test_EHR()
+    test_registry()
+    #always returns as list with json/dictionary object(s) inside
     pass
