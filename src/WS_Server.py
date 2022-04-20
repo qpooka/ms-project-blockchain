@@ -12,9 +12,6 @@ import datetime
 import json
 from flask import Flask, jsonify
 from flask import abort,make_response,request
-#from BlendCapAC_Policy import CapPolicy
-#from RBAC_Policy import RBACPolicy
-#from ABAC_Policy import ABACPolicy
 
 from db_layer import *
 from EHR_ACToken_Proj import EHR_ACToken_Proj
@@ -161,7 +158,9 @@ def create_institution_registry():
     #call to db_layer to add entry into REGD.db database
     RegistrationManager.insert_entry('REGD.db', data_in)
     
-	return jsonify({'result': 'Succeed'}), 201     
+	return jsonify({'result': 'Succeed', 'data' : data_in}), 201     
+
+#=====================================================
 
 #GET req
 @app.route('/test/api/v1.0/dt', methods=['GET'])

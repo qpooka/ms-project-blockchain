@@ -140,16 +140,6 @@ def test_create_entries(data_args = {}):
     resp = WSClient.Create_InstitutionRegistryEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/inst_reg', data_args)
     print(resp)
 
-def test_search(data_args={}):
-    params={}
-    if('project_id' in data_args):
-        params['project_id']=data_args['project_id']
-    else:
-        params['project_id']=0
-
-    print(WSClient.Get_Datasets('http://128.226.78.89/test/api/v1.0/dt', data_args))
-    #print(WSClient.Get_DataByID('http://128.226.78.89/test/api/v1.0/dt/project', params, data_args))
-    
 def test_add(data_args={}):
     project = {
         'title': 'post_new',
