@@ -33,6 +33,16 @@ class WSClient(object):
         json_response = response.json()
         
         return json_response
+        
+    @staticmethod
+    def get_AllTokens(api_url, params, data_args = {}):
+        headers = {'Content-Type' : 'application/json'}
+        response = requests.get(api_url, params = params, data = json.dumps(data_args), headers = headers)
+        
+        #wait for and then get response (in json)
+        json_response = response.json()
+        
+        return json_response
     
     #get patient's tokenID by Name
     @staticmethod

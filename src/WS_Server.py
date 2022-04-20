@@ -75,12 +75,26 @@ def get_EHRbyTokenID():
     #Token missing, deny access
 	#if(request.data=='{}'):
 	#	abort(401, {'message': 'Token missing, deny access'})
-    tokenID = request.args.get('Name', default = 1, type = str)
-    patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
-    tokenID = patientEntry[0]['TokenID']
-    return jsonify({'TokenID' : tokenID}), 201
+    
+    #authorization, check SC
+    
+    tokenID = request.args.get('TokenID', default = 1, type = str)
+    
+    #call SC to query token (based on tokenID), extract name
+    
+    patientName = 
+    
+    patientEHR = EHR_Manager.select_ByName('EHRD.db', patientName)
+    EHRret = patientEHR[0]
+    return jsonify(EHRret), 201
     
     return 
+    
+#GET req
+@app.route('/test/api/v1.0/dt/All/Tokens', methods=['GET'])
+def get_AllTokens():  
+    patientEntries = PatientACManager.select_Allentry('PACD.db')
+    return jsonify({'entries' : patientEntries}), 201
     
 #GET req
 @app.route('/test/api/v1.0/dt/TokenID', methods=['GET'])
@@ -94,6 +108,9 @@ def get_TokenIdByName():
     patientName = request.args.get('Name', default = 1, type = str)
     patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
     tokenID = patientEntry[0]['TokenID']
+    
+    #need to call SC, use tokenID to find tokenID saved in SC
+    
     return jsonify({'TokenID' : tokenID}), 201
     
 #POST req
@@ -110,12 +127,15 @@ def create_patient_entry():
 		
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
-
-	proj_json = req_data['project_data']
+    
+	data_in = [req_data['Name'], req_data['TokenID'], req_data['InstitutionName'], req_data['InstitutionAddress']]
+    
     
     #call SC to add patient token
-    #call db to add patient entry into PACD database
-	
+    
+    #call db to add patient entry into PACD database, insert data as a list
+	PatientACManager.insert_entry('PACD.db', data_in)
+    
 	#return jsonify({'project_data': project}), 201
 	return jsonify({'result': 'Succeed'}), 201    
     
@@ -136,10 +156,10 @@ def create_institution_registry():
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
 
-	#proj_json = req_data['project_data']
+    data_in = [req_data['Name'], req_data['SC_Address']]
 	
     #call to db_layer to add entry into REGD.db database
-    RegistrationManager.insert_entry('REGD.db', req_data)
+    RegistrationManager.insert_entry('REGD.db', data_in)
     
 	return jsonify({'result': 'Succeed'}), 201     
 

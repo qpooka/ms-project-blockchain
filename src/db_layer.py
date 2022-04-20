@@ -48,7 +48,6 @@ class PatientACManager(object):
             #create table
             conn.execute("CREATE TABLE PatientACdata \
                         (Name                      TEXT PRIMARY KEY, \
-                         Gender                    TEXT NULL,        \
                          TokenID                   TEXT NULL,        \
                          InstitutionName           TEXT NULL,        \
                          InstitutionAddress        TEXT NULL);")
@@ -459,8 +458,8 @@ def test_patient():
     #PatientACManager.remove_table(path_db)
 
     # test insert user data
-    patient_arg1 = ['Jeff', 'male', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
-    patient_arg2 = ['Alice', 'female', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg1 = ['Jeff', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg2 = ['Alice', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
     PatientACManager.insert_entry(path_db, patient_arg1)
     PatientACManager.insert_entry(path_db, patient_arg2)
 
