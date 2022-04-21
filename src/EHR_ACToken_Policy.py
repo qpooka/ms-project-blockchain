@@ -18,6 +18,7 @@ import sys
 from flask import request
 
 from EHR_ACToken_Proj import EHR_ACToken_Proj
+from db_layer import *
 
 now = datetime.datetime.now()
 datestr=now.strftime("%Y-%m-%d")
@@ -59,6 +60,8 @@ class EHR_ACToken_Policy(object):
     def check_token(tokenID, instrAddr):
         ret = False
         ret = mytoken.checkToken(tokenID, instrAddr)
+        #should fail if sender is not superInstitution (contract maker)
+        #also if institution is not is AC list
         return ret
     
     #check db_layer for institution in registry table
@@ -69,12 +72,77 @@ class EHR_ACToken_Policy(object):
         reg_entry = RegistrationManager.select_ByName(path_db, institutionName)
         if institutionName in reg_entry:
             ret = True
-            
+               
         return ret
         
+    #check for institution in patient database    
+    @staticmethod
+    def check_patient_database(patientName, institutionAddress):
+        ret = False
+        path_db = 'PACD.db'
+        patient_entry = PatientACManager.select_ByName(path_db, patientName)
+        inst_addresses = patient_entry[3]
+        splitAddresses = inst_addresses.split(",")
+        if institutionAddress in splitAddresses:
+            ret = True
+               
+        return ret
+        
+    #checks    
     @staticmethod
     def is_access_request_valid(req_args):
-    
+        #Get account address
+		accountAddr = mytoken.getAddress('sam_miner_win7_0', '../CapbilityToken/test/addr_list.json')
+
+		#Define ls_time_exec to save executing time to log
+		ls_time_exec=[]
+
+		#get token data
+		start_time=time.time()
+
+		# 1) get token from smart contract, high overload
+		token_data=CapPolicy.get_token(accountAddr)
+
+		# 2) Save token data to local token.dat
+		#FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
+
+		# 3) read token from local data, low overload
+		'''read_token=FileUtil.ReadLines('token.dat')
+		token_data=TypesUtil.string_to_json(read_token[0])'''
+		#print(token_data)
+
+		exec_time=time.time()-start_time
+		ls_time_exec.append(format(exec_time*1000, '.3f'))	
+		print("Execution time of get_token is:%2.6f" %(exec_time))
+
+		#extract access action from request
+		access_data={}
+		access_data['url_rule']=req_args.url_rule
+		access_data['method']=req_args.method
+		#print(access_data)
+
+		start_time=time.time()
+		if(not CapPolicy.is_token_valid(token_data)):
+			print('token valid fail')
+			return False
+		exec_time=time.time()-start_time
+		ls_time_exec.append(format(exec_time*1000, '.3f'))	
+		print("Execution time of is_token_valid is:%2.6f" %(exec_time))
+
+		start_time=time.time()
+		if(not CapPolicy.is_access_valid(token_data, access_data)):
+			print('access valid fail')
+			return False
+		exec_time=time.time()-start_time
+		ls_time_exec.append(format(exec_time*1000, '.3f'))		
+		print("Execution time of is_access_valid is:%2.6f" %(exec_time))
+
+		#transfer list to string
+		str_time_exec=" ".join(ls_time_exec)
+		#print(str_time_exec)
+		FileUtil.AddLine('exec_time_server.log', str_time_exec)
+
+		return True
     
     
 

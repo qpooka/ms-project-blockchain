@@ -73,9 +73,14 @@ def get_EHRbyTokenID():
 	#if(request.data=='{}'):
 	#	abort(401, {'message': 'Token missing, deny access'})
     
-    #authorization, check SC
-    
     tokenID = request.args.get('TokenID', default = 1, type = str)
+    instAddress = request.args.get('InstitutionAddress', default = 1, type = str)
+    
+    #authorization, check SC and inst registry
+    #need tokenID and institution address
+    
+    #if need extra protection, can have extra input (institution address)
+    #   that will be checked against PatientACManager database
     
     #call SC to query token (based on tokenID), extract name
     
@@ -86,12 +91,14 @@ def get_EHRbyTokenID():
     return jsonify(EHRret), 201
     
     return 
-    
+
+'''    
 #GET req
 @app.route('/test/api/v1.0/dt/All/Tokens', methods=['GET'])
 def get_AllTokens():  
     patientEntries = PatientACManager.select_Allentry('PACD.db')
     return jsonify({'entries' : patientEntries}), 201
+'''
     
 #GET req
 @app.route('/test/api/v1.0/dt/TokenID', methods=['GET'])
@@ -122,6 +129,9 @@ def create_patient_entry():
 	'''if(not CapPolicy.is_valid_access_request(request)):
 		abort(401, {'message': 'Authorization fail, deny access'})'''
 		
+    #for auth, check institution registry database
+    
+        
 	if not request.json:
 		abort(400, {'message': 'No data in parameter for operation.'})
     
@@ -159,6 +169,10 @@ def create_institution_registry():
     RegistrationManager.insert_entry('REGD.db', data_in)
     
 	return jsonify({'result': 'Succeed', 'data' : data_in}), 201     
+
+    #adding//deleting institutions will need auth that:
+    #   checks for existing insitution in PatientACManager database
+    #   this will require extra input that won't be used in SC input
 
 #=====================================================
 

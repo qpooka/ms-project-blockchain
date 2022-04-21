@@ -33,7 +33,8 @@ class WSClient(object):
         json_response = response.json()
         
         return json_response
-        
+
+'''        
     @staticmethod
     def get_AllTokens(api_url, params, data_args = {}):
         headers = {'Content-Type' : 'application/json'}
@@ -43,6 +44,7 @@ class WSClient(object):
         json_response = response.json()
         
         return json_response
+'''
     
     #get patient's tokenID by Name
     @staticmethod
@@ -134,12 +136,16 @@ def test_get(data_args = {}):
     EHR = WSClient.Get_EHRbyTokenID('http://0.0.0.0:1801/test/api/v1.0/dt/EHR', params, data_args)
     print(EHR)
 
-def test_create_entries(data_args = {}):
+def test_create_update_institution(data_args = {}):
+    resp1 = WSClient.Update_AddInstitution('http://0.0.0.0:1801/test/api/v1.0/dt/update/add/institution', data_args)
+    resp2 = WSClient.Create_InstitutionRegistryEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/inst_reg', data_args)
+    print(resp1)
+    print(resp2)
     
-    #resp = WSClient.Create_PatientEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/patient_entry', data_args)
-    resp = WSClient.Create_InstitutionRegistryEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/inst_reg', data_args)
+def test_create_patient_entry(data_args = {}):
+    resp = WSClient.Create_PatientEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/patient_entry', data_args)
     print(resp)
-
+    
 def test_add(data_args={}):
     project = {
         'title': 'post_new',
