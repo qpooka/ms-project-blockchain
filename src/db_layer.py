@@ -61,7 +61,7 @@ class PatientACManager(object):
     def select_Allentry(path_db):
         conn = sqlite3.connect(path_db) 
         conn.row_factory = dict_factory
-        cursor = conn.execute("SELECT Name, Gender, TokenID, InstitutionName, InstitutionAddress from PatientACdata;")
+        cursor = conn.execute("SELECT Name, TokenID, InstitutionName, InstitutionAddress from PatientACdata;")
 
         ls_result=[]
         for row in cursor:  
@@ -78,7 +78,7 @@ class PatientACManager(object):
         conn = sqlite3.connect(path_db)
         
         conn.row_factory = dict_factory
-        cursor = conn.execute("SELECT Name, Gender, TokenID, InstitutionName, InstitutionAddress from PatientACdata where Name='%s';" %(patient_name))
+        cursor = conn.execute("SELECT Name, TokenID, InstitutionName, InstitutionAddress from PatientACdata where Name='%s';" %(patient_name))
         
         ls_result=[]        
         for row in cursor:
@@ -90,6 +90,7 @@ class PatientACManager(object):
     
     #Update specific part of patient entry
     #input arg_list: Name, InstitutionName, InstitutionAddress
+    @staticmethod
     def update_addInstitution(path_db, arg_list):
         conn = sqlite3.connect(path_db)
         
@@ -110,6 +111,7 @@ class PatientACManager(object):
         conn.close()
     
     #input arg_list: Name, InstitutionName, InstitutionAddress
+    @staticmethod
     def update_deleteInstitution(path_db, arg_list):
         conn = sqlite3.connect(path_db)
         
@@ -148,8 +150,8 @@ class PatientACManager(object):
     def update_entry(path_db, arg_list):
         conn = sqlite3.connect(path_db)
         
-        conn.execute("UPDATE PatientACdata set Name='%s', Gender='%s', TokenID='%s', InstitutionName='%s', InstitutionAddress='%s' where Name='%s';" \
-                    %(arg_list[1], arg_list[2], arg_list[3], arg_list[4], arg_list[5], arg_list[0]))
+        conn.execute("UPDATE PatientACdata set Name='%s', TokenID='%s', InstitutionName='%s', InstitutionAddress='%s' where Name='%s';" \
+                    %(arg_list[1], arg_list[2], arg_list[3], arg_list[4], arg_list[0]))
         
         conn.commit()
         conn.close() 
@@ -165,14 +167,15 @@ class PatientACManager(object):
         if len(user_entry) > 0:
             print("%s already exists!" %(arg_list[0]))
         else:             
-            conn.execute("INSERT INTO PatientACdata (Name, Gender, TokenID, InstitutionName, InstitutionAddress) VALUES ('%s','%s','%s','%s','%s');" \
-                %(arg_list[0], arg_list[1], arg_list[2], arg_list[3], arg_list[4]));
+            conn.execute("INSERT INTO PatientACdata (Name, TokenID, InstitutionName, InstitutionAddress) VALUES ('%s','%s','%s','%s');" \
+                %(arg_list[0], arg_list[1], arg_list[2], arg_list[3]));
 
             conn.commit()
         conn.close()
     
     #Remove table
     #for restarting local db
+    @staticmethod
     def remove_table(db_path):
         conn = sqlite3.connect(db_path)
         #remove selected table
@@ -295,6 +298,7 @@ class RegistrationManager(object):
     
     #Remove table
     #for restarting local db
+    @staticmethod
     def remove_table(db_path):
         conn = sqlite3.connect(db_path)
         #remove selected table
@@ -412,6 +416,7 @@ class EHR_Manager(object):
     
     #Remove table
     #for restarting local db
+    @staticmethod
     def remove_table(db_path):
         conn = sqlite3.connect(db_path)
         #remove selected table
@@ -436,8 +441,8 @@ def init_patient():
     #PatientACManager.remove_table(path_db)
 
     # test insert user data
-    patient_arg1 = ['Jeff', 'male', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
-    patient_arg2 = ['Alice', 'female', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg1 = ['Jeff', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg2 = ['Alice', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
     PatientACManager.insert_entry(path_db, patient_arg1)
     PatientACManager.insert_entry(path_db, patient_arg2)
 
@@ -447,6 +452,13 @@ def init_patient():
     print(patients_list)
     patients_entry = PatientACManager.select_ByName(path_db,'Jeff')
     print(patients_entry)
+    print()
+    
+    #update - add institution test
+    print("------update - add institution tests for Jeff-------")
+    inst2 = ["newInst", "0xa7d094a545a59610a9ef9f36afb4d640d3140cd6"]
+    PatientACManager.update_addInstitution(path_db, [patient_arg1[0], inst2[0], inst2[1]])
+    print(PatientACManager.select_ByName(path_db, patient_arg1[0]))
     print()
       
 def test_patient():
@@ -522,6 +534,13 @@ def test_registry():
     print(registry_name_entry) #should print EHR_ACToken_Proj
     registry_address_entry = RegistrationManager.select_ByAddress(path_db,'0x6e8df907de0c1bb5a6d32a21ff0042fbef0c05d0')
     print(registry_address_entry) #should print differentInst
+    print()
+    
+     #update - delete institution test
+    print("------update - delete differentInst tests for Jeff-------")
+    RegistrationManager.delete_ByName(path_db, 'differentInst')
+    registry_list = RegistrationManager.select_Allentry(path_db)
+    print(registry_list)
     print()
 
 def test_EHR():

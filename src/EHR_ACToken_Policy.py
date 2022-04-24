@@ -32,7 +32,7 @@ contractAddr = EHR_ACToken_Proj.getAddress('EHR_ACToken_Proj', './addr_list.json
 contractConfig = '../contracts/build/contracts/EHR_ACToken_Proj.json'
 
 #new global EHR_ACToken_Proj object (used to make transactions with SC)
-mytoken = EHR_ACToken_Proj(http_provider, contract_addr, contract_config)
+mytoken = EHR_ACToken_Proj(httpProvider, contractAddr, contractConfig)
 
 '''
 EHR access control policy management
@@ -40,25 +40,26 @@ Server only uses this to check token AC, not to query token data directly
 '''
 class EHR_ACToken_Policy(object):
 
-	# get token data from smart contract, return json fromat
-	@staticmethod
-	def get_token(tokenID):
-		token_data = mytoken.queryTokenData(tokenID);
-		json_token={}
+    # get token data from smart contract, return json fromat
+    @staticmethod
+    def get_token(tokenID):
+        token_data = mytoken.queryTokenData(tokenID);
+        json_token={}
 
-		#Add token information
+        #Add token information
         json_token['name'] = token_data[0]
         json_token['gender'] = token_data[1]
         json_token['institutionAmount'] = token_data[2]
         json_token['authInstitutionNames'] = token_data[3]
 
-		return json_token
+        return json_token
 
     # check token for institution using its address
     # should it check both SC and local db_layer? though, SC still has priority
     @staticmethod
     def check_token(tokenID, instrAddr):
         ret = False
+        #time.sleep(2)
         ret = mytoken.checkToken(tokenID, instrAddr)
         #should fail if sender is not superInstitution (contract maker)
         #also if institution is not is AC list
@@ -81,211 +82,81 @@ class EHR_ACToken_Policy(object):
         ret = False
         path_db = 'PACD.db'
         patient_entry = PatientACManager.select_ByName(path_db, patientName)
-        inst_addresses = patient_entry[3]
+        
+        inst_addresses = patient_entry[0]['InstitutionAddress']
         splitAddresses = inst_addresses.split(",")
         if institutionAddress in splitAddresses:
             ret = True
                
         return ret
         
-    #checks    
-    @staticmethod
+    #compare address input against super Institution address    
+    @staticmethod    
+    def check_address_json(address):
+        ret = False
+        superAddr = mytoken.getAddress('EHR_ACToken_Proj', './addr_list.json')
+        if address == superAddr:
+            ret = True
+        
+        return ret
+      
+    @staticmethod  
     def is_access_request_valid(req_args):
-        #Get account address
-		accountAddr = mytoken.getAddress('sam_miner_win7_0', '../CapbilityToken/test/addr_list.json')
+        ret = False
+        #if req_args.get('address') == None:
+        #    ret = False
 
-		#Define ls_time_exec to save executing time to log
-		ls_time_exec=[]
-
-		#get token data
-		start_time=time.time()
-
-		# 1) get token from smart contract, high overload
-		token_data=CapPolicy.get_token(accountAddr)
-
-		# 2) Save token data to local token.dat
-		#FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
-
-		# 3) read token from local data, low overload
-		'''read_token=FileUtil.ReadLines('token.dat')
-		token_data=TypesUtil.string_to_json(read_token[0])'''
-		#print(token_data)
-
-		exec_time=time.time()-start_time
-		ls_time_exec.append(format(exec_time*1000, '.3f'))	
-		print("Execution time of get_token is:%2.6f" %(exec_time))
-
-		#extract access action from request
-		access_data={}
-		access_data['url_rule']=req_args.url_rule
-		access_data['method']=req_args.method
-		#print(access_data)
-
-		start_time=time.time()
-		if(not CapPolicy.is_token_valid(token_data)):
-			print('token valid fail')
-			return False
-		exec_time=time.time()-start_time
-		ls_time_exec.append(format(exec_time*1000, '.3f'))	
-		print("Execution time of is_token_valid is:%2.6f" %(exec_time))
-
-		start_time=time.time()
-		if(not CapPolicy.is_access_valid(token_data, access_data)):
-			print('access valid fail')
-			return False
-		exec_time=time.time()-start_time
-		ls_time_exec.append(format(exec_time*1000, '.3f'))		
-		print("Execution time of is_access_valid is:%2.6f" %(exec_time))
-
-		#transfer list to string
-		str_time_exec=" ".join(ls_time_exec)
-		#print(str_time_exec)
-		FileUtil.AddLine('exec_time_server.log', str_time_exec)
-
-		return True
+        return True
+        
     
     
 
-	# check token status, like status flag, issue and expire time.
-	@staticmethod
-	def is_token_valid(token_data):
-		ret = True
-		#check enable flag
-		if( token_data['initialized']!=True or token_data['isValid']!=True):
-			ret = False
+    # check token status, like status flag, issue and expire time.
+    @staticmethod
+    def is_token_valid(token_data):
+        ret = True
+        #check enable flag
+        if( token_data['initialized']!=True or token_data['isValid']!=True):
+            ret = False
 
-		#check issue time and expire time
-		now_stamp = DatetimeUtil.datetime_timestamp(datetime.datetime.now())
-		if( (token_data['issuedate'] > now_stamp) or (now_stamp > token_data['expireddate']) ):
-			ret = False
-		return ret
+        #check issue time and expire time
+        now_stamp = DatetimeUtil.datetime_timestamp(datetime.datetime.now())
+        if( (token_data['issuedate'] > now_stamp) or (now_stamp > token_data['expireddate']) ):
+            ret = False
+        return ret
 
-	# verify acccess right
-	@staticmethod
-	def is_access_valid(token_data, acess_args=''):
-		ret = True
 
-		#token_authorization = token_data[2][1]
-		ac_data=TypesUtil.string_to_json(token_data['authorization'])
-		#print(ac_data)
-
-		if(ac_data['action']!=acess_args['method'] or 
-			ac_data['resource']!=str(acess_args['url_rule']) or 
-			not CapPolicy.is_condition_valid(ac_data['conditions'])):
-			'''print(ac_data['action']!=acess_args['method'])
-			print(ac_data['resource']==str(acess_args['url_rule']))
-			print(CapPolicy.is_condition_valid(ac_data['conditions']))'''
-			ret = False
-		return ret
-
-	# check condition status to verify context requirement
-	@staticmethod
-	def is_condition_valid(condition_data):
-		if(condition_data==[]):
-			return True
-		#handle Timespan
-		if(condition_data['type']=='Timespan'):
-			#print condition_data['value']['start']
-			starttime = DatetimeUtil.string_datetime(condition_data['value']['start'], "%H:%M:%S")
-			endtime = DatetimeUtil.string_datetime(condition_data['value']['end'], "%H:%M:%S")
-			nowtime=DatetimeUtil.string_datetime(timestr, "%H:%M:%S")
-			'''print(starttime)
-			print(endtime)
-			print(nowtime)'''
-			#check if timespan condition is valid
-			if(not (starttime<nowtime<endtime) ):
-				print("condition validation fail!")
-				return False
-		return True
-
-	'''
-	Valid access request based on policy, call by interposing service API
-	'''	
-	@staticmethod	
-	def is_valid_access_request(req_args):
-		#Get account address
-		accountAddr=CapACToken.getAddress('sam_miner_win7_0', '../CapbilityToken/test/addr_list.json')
-
-		#Define ls_time_exec to save executing time to log
-		ls_time_exec=[]
-
-		#get token data
-		start_time=time.time()
-
-		# 1) get token from smart contract, high overload
-		token_data=CapPolicy.get_token(accountAddr)
-
-		# 2) Save token data to local token.dat
-		#FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
-
-		# 3) read token from local data, low overload
-		'''read_token=FileUtil.ReadLines('token.dat')
-		token_data=TypesUtil.string_to_json(read_token[0])'''
-		#print(token_data)
-
-		exec_time=time.time()-start_time
-		ls_time_exec.append(format(exec_time*1000, '.3f'))	
-		print("Execution time of get_token is:%2.6f" %(exec_time))
-
-		#extract access action from request
-		access_data={}
-		access_data['url_rule']=req_args.url_rule
-		access_data['method']=req_args.method
-		#print(access_data)
-
-		start_time=time.time()
-		if(not CapPolicy.is_token_valid(token_data)):
-			print('token valid fail')
-			return False
-		exec_time=time.time()-start_time
-		ls_time_exec.append(format(exec_time*1000, '.3f'))	
-		print("Execution time of is_token_valid is:%2.6f" %(exec_time))
-
-		start_time=time.time()
-		if(not CapPolicy.is_access_valid(token_data, access_data)):
-			print('access valid fail')
-			return False
-		exec_time=time.time()-start_time
-		ls_time_exec.append(format(exec_time*1000, '.3f'))		
-		print("Execution time of is_access_valid is:%2.6f" %(exec_time))
-
-		#transfer list to string
-		str_time_exec=" ".join(ls_time_exec)
-		#print(str_time_exec)
-		FileUtil.AddLine('exec_time_server.log', str_time_exec)
-
-		return True
 
 def test_CapACToken():
 
 
-	#Get account address
-	accountAddr=CapACToken.getAddress('sam_miner_win7_0', '../CapbilityToken/test/addr_list.json')
-	#print("Account: " + accountAddr)
+    #Get account address
+    accountAddr=CapACToken.getAddress('sam_miner_win7_0', '../CapbilityToken/test/addr_list.json')
+    #print("Account: " + accountAddr)
 
-	#Read token data using call
-	#token_data=mytoken.getCapToken(accountAddr);
-	#CapACToken.print_tokendata(token_data)
-	#print(token_data)
+    #Read token data using call
+    #token_data=mytoken.getCapToken(accountAddr);
+    #CapACToken.print_tokendata(token_data)
+    #print(token_data)
 
 
-	#token_data=CapPolicy.get_token(accountAddr)
-	'''print(token_data['delegatee'][0])
-	ac = TypesUtil.string_to_json(token_data['authorization'])
-	print(ac['resource'])'''
+    #token_data=CapPolicy.get_token(accountAddr)
+    '''print(token_data['delegatee'][0])
+    ac = TypesUtil.string_to_json(token_data['authorization'])
+    print(ac['resource'])'''
 
-	#FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
+    #FileUtil.AddLine('token.dat', TypesUtil.json_to_string(token_data))
 
-	'''read_token=FileUtil.ReadLines('token.dat')
-	json_token=TypesUtil.string_to_json(read_token[0])
-	print(json_token['initialized'])'''
+    '''read_token=FileUtil.ReadLines('token.dat')
+    json_token=TypesUtil.string_to_json(read_token[0])
+    print(json_token['initialized'])'''
 
-	#ret=CapPolicy.is_token_valid(token_data)
+    #ret=CapPolicy.is_token_valid(token_data)
 
-	#ret=CapPolicy.is_valid_access_request()
-	
+    #ret=CapPolicy.is_valid_access_request()
+    
 
 if __name__ == "__main__":
 
-	test_CapACToken()
-	pass
+    test_CapACToken()
+    pass

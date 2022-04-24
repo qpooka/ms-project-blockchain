@@ -141,8 +141,8 @@ if __name__ == "__main__":
         
     elif(args.test_op==2):
         #--------------- create token data given id --------------------
-        patient1Name = 'Jeff'
-        patient1Gender = 'male'
+        patient1Name = 'Alice'
+        patient1Gender = 'female'
         myEHR_ACToken_Proj.createToken(tokenID, 'EHR_ACToken_Proj', contractAddr, patient1Name, patient1Gender)
         
     elif(args.test_op == 3):
@@ -169,12 +169,12 @@ if __name__ == "__main__":
     elif(args.test_op == 4):
         #add institutions
         myEHR_ACToken_Proj.addInstitution(tokenID, "newInst", newInstAddr)
-        myEHR_ACToken_Proj.addInstitution(tokenID, "differentInst", diffInstAddr)
+        #myEHR_ACToken_Proj.addInstitution(tokenID, "differentInst", diffInstAddr)
         
     elif(args.test_op == 5):
         #delete institutions
-        myEHR_ACToken_Proj.deleteInstitution(tokenID, newInstAddr)
-        #myEHR_ACToken_Proj.deleteInstitution(tokenID, diffInstAddr)
+        #myEHR_ACToken_Proj.deleteInstitution(tokenID, newInstAddr)
+        myEHR_ACToken_Proj.deleteInstitution(tokenID, diffInstAddr)
         
     else:
         #------------------------- show contract information --------------------------------

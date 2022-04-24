@@ -34,17 +34,7 @@ class WSClient(object):
         
         return json_response
 
-'''        
-    @staticmethod
-    def get_AllTokens(api_url, params, data_args = {}):
-        headers = {'Content-Type' : 'application/json'}
-        response = requests.get(api_url, params = params, data = json.dumps(data_args), headers = headers)
-        
-        #wait for and then get response (in json)
-        json_response = response.json()
-        
-        return json_response
-'''
+
     
     #get patient's tokenID by Name
     @staticmethod
@@ -131,7 +121,8 @@ def test_get(data_args = {}):
     #tokenID = WSClient.Get_TokenIdByName('http://128.226.78.89/test/api/v1.0/dt/TokenID', params, data_args)
     tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
     tokenID = tokenEntry['TokenID']
-    params['tokenID'] = tokenID
+    print(tokenID)
+    params['TokenID'] = tokenID
     #print(WSClient.Get_EHRbyTokenID('http://128.226.78.89/test/api/v1.0/dt/EHR', params, data_args))
     EHR = WSClient.Get_EHRbyTokenID('http://0.0.0.0:1801/test/api/v1.0/dt/EHR', params, data_args)
     print(EHR)
@@ -216,7 +207,8 @@ if __name__ == "__main__":
     test_update()
     test_delete()
     test_token()'''
-    data_args = {'Name' : 'Jeff'}
+    data_args = {'Name' : 'Jeff', 'Address' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f'}
     test_get(data_args)
+    #why id the EHR that is returned all jumboed up in order?
     #test_EHR_ACToken()
     pass
