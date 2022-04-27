@@ -76,31 +76,24 @@ def access_deny(error):
 def get_EHRbyTokenID():
     #missing, deny access
     req_data = json.loads(request.data)
-    if (req_data == {}) or (req_data.get('Address') == None) or (req_data.get('Name') == None):
+    if (req_data.get('InstitutionName') == None) or (req_data.get('InstitutionAddress') == None) or (req_data.get('Name') == None):
        abort(401, {'message': 'missing relevant information, deny access'})
     
-    print("========HERE IS IT=========")
-    print(request)
-    print(request.data)
-    print("========ENDS HERE==========")
-    
     tokenID = request.args.get('TokenID', default = 1, type = str)
-    instAddress = request.args.get('InstitutionAddress', default = 1, type = str)
     
     #authorization, check SC and inst registry
     #need tokenID and institution address
     
-    if(not EHR_ACToken_Policy.check_address_json(req_data['Address'])):
+    if(not EHR_ACToken_Policy.check_institution_registry(req_data['InstitutionName'], req_data['InstitutionAddress'])):
+        abort(401, {'message2': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_patient_database(req_data['Name'], req_data['InstitutionAddress'])):
         abort(401, {'message': 'Authorization fail, deny access'})
     
-    if(not EHR_ACToken_Policy.check_patient_database(req_data['Name'], req_data['Address'])):
+    #check SC
+    if(not EHR_ACToken_Policy.check_token(str(tokenID), req_data['InstitutionAddress'])):
         abort(401, {'message': 'Authorization fail, deny access'})
     
-    if(not EHR_ACToken_Policy.check_token(str(tokenID), req_data['Address'])):
-        abort(401, {'message': 'Authorization fail, deny access'})
-    
-    #if(not EHR_ACToken_Policy.is_access_request_valid(request.data)):
-    #    abort(401, {'message': 'Authorization fail, deny access'})
     
     print("========HERE IS IT=========")
     print("PASSED TEST")
@@ -110,15 +103,19 @@ def get_EHRbyTokenID():
     #call SC to query token (based on tokenID), extract name
     #also check token, the institution name matches
     aToken = EHR_ACToken_Policy.get_token(str(tokenID))
-    #print(aToken)
+    print(aToken)
+    print(RegistrationManager.select_Allentry('REGD.db'))
     
     patientName = aToken['name']
     
-    patientEHR = EHR_Manager.select_ByName('EHRD.db', patientName)
-    EHRret = patientEHR[0]
+    try:
+        patientEHR = EHR_Manager.select_ByName('EHRD.db', patientName)
+        EHRret = patientEHR[0]
+    except:
+        abort(404, {'message': 'No EHR found'})
+        
     return jsonify(EHRret), 201
     
-    return 
 
 '''    
 #GET req
@@ -127,24 +124,55 @@ def get_AllTokens():
     patientEntries = PatientACManager.select_Allentry('PACD.db')
     return jsonify({'entries' : patientEntries}), 201
 '''
+
+#get from SC  
+#GET req
+@app.route('/test/api/v1.0/dt/Token', methods=['GET'])  
+def get_TokenByTokenID():    
+    #missing, deny access
+    req_data = json.loads(request.data)
+    if (req_data.get('InstitutionName') == None) or (req_data.get('InstitutionAddress') == None) or (req_data.get('Name') == None):
+       abort(401, {'message': 'missing relevant information, deny access'})
+    
+    tokenID = request.args.get('TokenID', default = 1, type = str)
+    
+    #authorization, check SC and inst registry
+    #need tokenID and institution address
+    
+    if(not EHR_ACToken_Policy.check_institution_registry(req_data['InstitutionName'], req_data['InstitutionAddress'])):
+        abort(401, {'message2': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_patient_database(req_data['Name'], req_data['InstitutionAddress'])):
+        abort(401, {'message': 'Authorization fail, deny access'})
+    
+    #check SC
+    if(not EHR_ACToken_Policy.check_token(str(tokenID), req_data['InstitutionAddress'])):
+        abort(401, {'message': 'Authorization fail, deny access'})
+
+    aToken = EHR_ACToken_Policy.get_token(str(tokenID))
+    
+    return jsonify(aToken), 201
     
 #GET req
 @app.route('/test/api/v1.0/dt/TokenID', methods=['GET'])
 def get_TokenIdByName():
     #missing, deny access
     req_data = json.loads(request.data)
-    if (req_data == {}) or (req_data.get('Address') == None) or (req_data.get('Name') == None):
+    if (req_data.get('InstitutionName') == None) or (req_data.get('InstitutionAddress') == None):
        abort(401, {'message': 'missing relevant information, deny access'})
     
-    if(not EHR_ACToken_Policy.check_address_json(req_data['Address'])):
+    patientName = request.args.get('Name', default = 1, type = str)
+    
+    if(not EHR_ACToken_Policy.check_institution_registry(req_data['InstitutionName'], req_data['InstitutionAddress'])):
+        abort(401, {'message2': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_patient_database(patientName, req_data['InstitutionAddress'])):
         abort(401, {'message': 'Authorization fail, deny access'})
     
-    
-    patientName = request.args.get('Name', default = 1, type = str)
     patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
     tokenID = patientEntry[0]['TokenID']
     
-    #need to call SC, use tokenID to find tokenID saved in SC
+    #get tokenID from local database
     
     return jsonify({'TokenID' : tokenID}), 201
     
@@ -153,48 +181,50 @@ def get_TokenIdByName():
 def create_patient_entry():
     #Token missing, deny access
     req_data = json.loads(request.data)
-    if('Name' not in req_data):
-        abort(401, {'message': 'Token missing, deny access'})
+    if ('Name' not in req_data) or ('TokenID' not in req_data) \
+        or ('NewInstitutionName' not in req_data) or ('NewAddress' not in req_data) \
+        or ('SuperAddress' not in req_data) or ('Gender' not in req_data):
+        abort(401, {'message': 'missing relevant information, deny access'})
     
-    #Authorization process
-    if(not EHR_ACToken_Policy.is_access_request_valid(request)):
-        abort(401, {'message': 'Authorization fail, deny access'})
-        
-    #for auth, check institution registry database
-    
-        
     if not request.json:
         abort(400, {'message': 'No data in parameter for operation.'})
     
-    data_in = [req_data['Name'], req_data['TokenID'], req_data['InstitutionName'], req_data['InstitutionAddress']]
+    if(not EHR_ACToken_Policy.check_address_json(req_data['SuperAddress'])):
+        abort(401, {'message': 'Authorization fail, deny access'})
     
+    if(not EHR_ACToken_Policy.check_institution_registry(req_data['NewInstitutionName'], req_data['NewAddress'])):
+        abort(401, {'message2': 'Authorization fail, deny access'})
     
-    #call SC to add patient token
+    data_in = [req_data['Name'], req_data['TokenID'], req_data['NewInstitutionName'], req_data['NewAddress']]
     
     #call db to add patient entry into PACD database, insert data as a list
     PatientACManager.insert_entry('PACD.db', data_in)
     
+    #call SC to add patient token
+    EHR_ACToken_Policy.create_token(req_data['TokenID'], req_data['NewInstitutionName'], req_data['NewAddress'], req_data['Name'], req_data['Gender'])
+    
     #return jsonify({'project_data': project}), 201
-    return jsonify({'result': 'Succeed'}), 201    
+    return jsonify({'result': 'Succeed', 'data_in_SC': data_in}), 201    
     
 #POST req
 @app.route('/test/api/v1.0/dt/create/inst_reg', methods=['POST'])
 def create_institution_registry():
-    #Token missing, deny access
+    #missing, deny access
     req_data = json.loads(request.data)
-    if('Name' not in req_data):
-        abort(401, {'message': 'Token missing, deny access'})
+    if ('Name' not in req_data) or ('NewAddress' not in req_data) \
+        or ('SuperAddress' not in req_data) or ('NewInstitutionName' not in req_data):
+        abort(401, {'message': 'missing relevant information, deny access'})
     
     #what authorization to include? this wouldn't involve SC
     
-    #Authorization process
-    '''if(not CapPolicy.is_valid_access_request(request)):
-        abort(401, {'message': 'Authorization fail, deny access'})'''
-        
+    #Authorization process 
     if not request.json:
         abort(400, {'message': 'No data in parameter for operation.'})
 
-    data_in = [req_data['Name'], req_data['SC_Address']]
+    if(not EHR_ACToken_Policy.check_address_json(req_data['SuperAddress'])):
+        abort(401, {'message': 'Authorization fail, deny access'})
+    
+    data_in = [req_data['NewInstitutionName'], req_data['NewAddress']]
     
     #call to db_layer to add entry into REGD.db database
     RegistrationManager.insert_entry('REGD.db', data_in)
@@ -205,43 +235,75 @@ def create_institution_registry():
     #   checks for existing insitution in PatientACManager database
     #   this will require extra input that won't be used in SC input
 
+@app.route('/test/api/v1.0/dt/update/add/institution', methods=['PUT'])
+def update_add_institution():
+    #data needed: Name, institutionAddess, institutionName, tokenID, superInstitution address
+    #putting everything in data_args, no params
+    
+    #missing, deny access
+    req_data = json.loads(request.data)
+    if ('Name' not in req_data) or ('SuperAddress' not in req_data) \
+        or ('TokenID' not in req_data) or ('NewAddress' not in req_data) \
+        or ('NewInstitutionName' not in req_data):
+        abort(401, {'message': 'missing relevant information, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_address_json(req_data['SuperAddress'])):
+        abort(401, {'message1': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_institution_registry(req_data['NewInstitutionName'], req_data['NewAddress'])):
+        abort(401, {'message2': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_patient_database(req_data['Name'], req_data['SuperAddress'])):
+        abort(401, {'message3': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_token(str(req_data['TokenID']), req_data['SuperAddress'])):
+        abort(401, {'message4': 'Authorization fail, deny access'})
+    
+    data_in = [req_data['Name'], req_data['NewInstitutionName'], req_data['NewAddress']]
+    
+    PatientACManager.update_addInstitution('PACD.db', data_in)
+    #call SC to update AC list in token
+    #maybe do this in EHR_ACToken_Policy? or directly in WS_Server?
+    EHR_ACToken_Policy.add_institution(req_data['TokenID'], req_data['NewInstitutionName'], req_data['NewAddress'])
+    
+    return jsonify({'result': 'Succeed', 'data' : data_in}), 201     
+    
+#delete institution needs: Name, tokenID, institutionAddress, superInstitution address
+@app.route('/test/api/v1.0/dt/update/delete/institution', methods=['PUT'])
+def update_delete_institution():
+    #missing, deny access
+    print(RegistrationManager.select_Allentry('REGD.db'))
+    
+    req_data = json.loads(request.data)
+    if ('Name' not in req_data) or ('SuperAddress' not in req_data) \
+        or ('TokenID' not in req_data) or ('NewAddress' not in req_data) \
+        or ('NewInstitutionName' not in req_data):
+        abort(401, {'message': 'missing relevant information, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_address_json(req_data['SuperAddress'])):
+        abort(401, {'message1': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_institution_registry(req_data['NewInstitutionName'], req_data['NewAddress'])):
+        abort(401, {'message2': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_patient_database(req_data['Name'], req_data['SuperAddress'])):
+        abort(401, {'message3': 'Authorization fail, deny access'})
+    
+    if(not EHR_ACToken_Policy.check_token(str(req_data['TokenID']), req_data['SuperAddress'])):
+        abort(401, {'message4': 'Authorization fail, deny access'})
+    
+    data_in = [req_data['Name'], req_data['NewInstitutionName'], req_data['NewAddress']]
+    
+    PatientACManager.update_deleteInstitution('PACD.db', data_in)
+    #call SC to update AC list in token
+    #maybe do this in EHR_ACToken_Policy? or directly in WS_Server?
+    EHR_ACToken_Policy.delete_institution(req_data['TokenID'], req_data['NewAddress'])
+    
+    return jsonify({'result': 'Succeed', 'data' : data_in}), 201    
+    
 #=====================================================
 
-#GET req
-@app.route('/test/api/v1.0/dt', methods=['GET'])
-def get_projects():
-    #Token missing, deny access
-    if(request.data=='{}'):
-        abort(401, {'message': 'Token missing, deny access'})
-        
-    #Authorization process
-    #if(not CapPolicy.is_valid_access_request(request)):
-    #if(not RBACPolicy.is_valid_access_request(request)):
-    #if(not ABACPolicy.is_valid_access_request(request)):
-    #   abort(401, {'message': 'Authorization fail, deny access'})
-    return jsonify({'result': 'Succeed', 'projects': projects}), 201
-    
-#GET req for specific ID
-@app.route('/test/api/v1.0/dt/project', methods=['GET'])
-def get_project():
-    #Token missing, deny access
-    if(request.data=='{}'):
-        abort(401, {'message': 'Token missing, deny access'})
-        
-    #Authorization process
-    #if(not CapPolicy.is_valid_access_request(request)):
-    #if(not RBACPolicy.is_valid_access_request(request)):
-    #if(not ABACPolicy.is_valid_access_request(request)):
-    #   abort(401, {'message': 'Authorization fail, deny access'})
-    #print request.data
-    project_id = request.args.get('project_id', default = 1, type = int)
-    #project_id = int(request.args['project_id'])
-    
-    project = [project for project in projects if project['id'] == project_id]
-    if len(project) == 0:
-        abort(404, {'message': 'No data found'})
-    return jsonify({'result': 'Succeed', 'project': project[0]}), 201
-    
+   
 #POST req. add title,description , date-time will be taken current fron system. id will be +1
 @app.route('/test/api/v1.0/dt/create', methods=['POST'])
 def create_project():

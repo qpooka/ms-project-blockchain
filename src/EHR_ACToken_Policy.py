@@ -53,6 +53,20 @@ class EHR_ACToken_Policy(object):
         json_token['authInstitutionNames'] = token_data[3]
 
         return json_token
+    
+    #could take these 3 functions out and call wrapper directly in WS_Server instead
+    
+    @staticmethod
+    def add_institution(tokenId, institutionName, newInstitutionAddr):
+        mytoken.addInstitution(tokenId, institutionName, newInstitutionAddr)
+        
+    @staticmethod
+    def delete_institution(tokenId, institutionAddr):
+        mytoken.deleteInstitution(tokenId, institutionAddr)
+        
+    @staticmethod
+    def create_token(tokenId, institutionName, institutionAddr, patientName, patientGender):
+        mytoken.createToken(tokenId, institutionName, institutionAddr, patientName, patientGender)
 
     # check token for institution using its address
     # should it check both SC and local db_layer? though, SC still has priority
@@ -67,11 +81,13 @@ class EHR_ACToken_Policy(object):
     
     #check db_layer for institution in registry table
     @staticmethod
-    def check_institution_registry(institutionName):
+    def check_institution_registry(institutionName, institutionAddress):
         ret = False
         path_db = 'REGD.db'
         reg_entry = RegistrationManager.select_ByName(path_db, institutionName)
-        if institutionName in reg_entry:
+        
+        inst_address = reg_entry[0]['SC_Address']
+        if institutionAddress == inst_address:
             ret = True
                
         return ret
@@ -107,25 +123,6 @@ class EHR_ACToken_Policy(object):
         #    ret = False
 
         return True
-        
-    
-    
-
-    # check token status, like status flag, issue and expire time.
-    @staticmethod
-    def is_token_valid(token_data):
-        ret = True
-        #check enable flag
-        if( token_data['initialized']!=True or token_data['isValid']!=True):
-            ret = False
-
-        #check issue time and expire time
-        now_stamp = DatetimeUtil.datetime_timestamp(datetime.datetime.now())
-        if( (token_data['issuedate'] > now_stamp) or (now_stamp > token_data['expireddate']) ):
-            ret = False
-        return ret
-
-
 
 def test_CapACToken():
 

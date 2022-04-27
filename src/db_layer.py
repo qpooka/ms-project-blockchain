@@ -441,8 +441,8 @@ def init_patient():
     #PatientACManager.remove_table(path_db)
 
     # test insert user data
-    patient_arg1 = ['Jeff', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
-    patient_arg2 = ['Alice', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg1 = ['Jeff', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_ACToken_Proj', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg2 = ['Alice', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_ACToken_Proj', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
     PatientACManager.insert_entry(path_db, patient_arg1)
     PatientACManager.insert_entry(path_db, patient_arg2)
 
@@ -470,8 +470,8 @@ def test_patient():
     #PatientACManager.remove_table(path_db)
 
     # test insert user data
-    patient_arg1 = ['Jeff', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
-    patient_arg2 = ['Alice', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_AC_1', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg1 = ['Jeff', '0xb7d094a545a59610a9ef9f36afb4d640d3140cd1', 'EHR_ACToken_Proj', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
+    patient_arg2 = ['Alice', '0x17d094a545a59610a9ef9f36afb4d640d3140cd2', 'EHR_ACToken_Proj', '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f']
     PatientACManager.insert_entry(path_db, patient_arg1)
     PatientACManager.insert_entry(path_db, patient_arg2)
 
@@ -537,7 +537,7 @@ def test_registry():
     print()
     
      #update - delete institution test
-    print("------update - delete differentInst tests for Jeff-------")
+    print("------update - delete differentInst tests-------")
     RegistrationManager.delete_ByName(path_db, 'differentInst')
     registry_list = RegistrationManager.select_Allentry(path_db)
     print(registry_list)
@@ -554,8 +554,11 @@ def test_EHR():
     # test insert EHR data
     EHR_arg1 = ['Jeff', 'male', '23', '123-45-6789', 'medication1,medication2', 'shrimp', 'random address']
     EHR_arg2 = ['Alice', 'female', '24', '234-56-7891', 'random', 'milk', 'parts unknown']
+    EHR_arg3 = ['Bob', 'male', '43', '111-11-2222', 'random', 'rocks', 'Antarctica']
+    
     EHR_Manager.insert_entry(path_db, EHR_arg1)
     EHR_Manager.insert_entry(path_db, EHR_arg2)
+    EHR_Manager.insert_entry(path_db, EHR_arg3)
     
     #search test
     print("------search tests after inserting new EHR entries-------")
