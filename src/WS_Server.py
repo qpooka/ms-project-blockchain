@@ -23,24 +23,6 @@ now = datetime.datetime.now()
 datestr=now.strftime("%Y-%m-%d")
 timestr=now.strftime("%H:%M:%S")
 
-#Defining dictionary dataset model
-projects = [
-    {
-        'id': 1,
-        'title':u'test',
-        'description':u'Hello World',
-        'date':u'04-28-2017',
-        'time': u'Morning'
-    },
-    {
-        'id': 2,
-        'title':u'GET',
-        'description':u'test GET APIs',
-        'date':u'4-29-2017',
-        'time': u'12:00 am'
-    }
-]
-
 #========================================== Error handler ===============================================
 #Error handler for abort(404) 
 @app.errorhandler(404)
@@ -169,9 +151,11 @@ def get_TokenIdByName():
     if(not EHR_ACToken_Policy.check_patient_database(patientName, req_data['InstitutionAddress'])):
         abort(401, {'message': 'Authorization fail, deny access'})
     
-    patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
-    tokenID = patientEntry[0]['TokenID']
-    
+    try:
+        patientEntry = PatientACManager.select_ByName('PACD.db', patientName)
+        tokenID = patientEntry[0]['TokenID']
+    except:
+        abort(404, {'message': 'No token found'})
     #get tokenID from local database
     
     return jsonify({'TokenID' : tokenID}), 201
@@ -303,109 +287,5 @@ def update_delete_institution():
     
 #=====================================================
 
-   
-#POST req. add title,description , date-time will be taken current fron system. id will be +1
-@app.route('/test/api/v1.0/dt/create', methods=['POST'])
-def create_project():
-    #Token missing, deny access
-    req_data=json.loads(request.data)
-    if('token_data' not in req_data):
-        abort(401, {'message': 'Token missing, deny access'})
-    
-    #Authorization process
-    '''if(not CapPolicy.is_valid_access_request(request)):
-        abort(401, {'message': 'Authorization fail, deny access'})'''
-        
-    if not request.json:
-        abort(400, {'message': 'No data in parameter for operation.'})
-
-    proj_json=req_data['project_data']
-    project = {
-        'id': projects[-1]['id'] + 1,
-        'title': proj_json['title'],
-        'description': proj_json['description'],
-        'date': proj_json['date'],
-        'time': proj_json['time']
-    }
-    projects.append(project)
-    #return jsonify({'project_data': project}), 201
-    return jsonify({'result': 'Succeed'}), 201
-
-#PUT req. Update any paraments by id number.
-@app.route('/test/api/v1.0/dt/update', methods=['PUT'])
-def update_project():
-    #Token missing, deny access
-    req_data=json.loads(request.data)
-    if('token_data' not in req_data):
-        abort(401, {'message': 'Token missing, deny access'})
-    
-    #Authorization process
-    '''if(not CapPolicy.is_valid_access_request(request)):
-        abort(401, {'message': 'Authorization fail, deny access'})'''
-        
-    if not request.json:
-        abort(400, {'message': 'No data in parameter for operation.'})
-        
-    #get json data
-    proj_json=req_data['project_data']
-    
-    #get updating record id
-    project_id=proj_json['id']
-    
-    #get record based on id
-    project = [project for project in projects if project['id'] == project_id]
-    
-    #data verification
-    if len(project) == 0:
-        abort(404, {'message': 'No data found'})
-    if not request.json:
-        abort(400, {'message': 'Not JSON or data of title is not unicode.'})
-    if 'title' in request.json and type(request.json['title']) != unicode:
-        abort(400, {'message': 'Not JSON or data of description is not unicode.'})
-    if 'description' in request.json and type(request.json['description']) is not unicode:
-        abort(400, {'message': 'Not JSON or data of date is not unicode.'})
-    if 'date' in request.json and type(request.json['date']) is not unicode:
-        abort(400, {'message': 'Not JSON or data of time is not unicode.'})
-    if 'time' in request.json and type(request.json['time']) is not unicode:
-        abort(400, {'message': 'Not JSON or data of title is not unicode.'})
-        
-    #update data field
-    project[0]['title'] = proj_json['title']
-    project[0]['description'] = proj_json['description']
-    project[0]['date'] = proj_json['date']
-    project[0]['time'] = proj_json['time']
-    
-    #return jsonify({'project_data': project}), 201
-    return jsonify({'result': 'Succeed'}), 201
-    
-#DELETE req. Delete by id number.
-@app.route('/test/api/v1.0/dt/delete', methods=['DELETE'])
-def delete_project():
-    #Token missing, deny access
-    req_data=json.loads(request.data)
-    if('token_data' not in req_data):
-        abort(401, {'message': 'Token missing, deny access'})
-    
-    #Authorization process
-    '''if(not CapPolicy.is_valid_access_request(request)):
-        abort(401, {'message': 'Authorization fail, deny access'})'''
-        
-    if not request.json:
-        abort(400, {'message': 'No data in parameter for operation.'})
-        
-    #get json data
-    #req_json=request.json
-
-    #get updating record id
-    project_id=req_data['id']
-
-    #get record based on id
-    project = [project for project in projects if project['id'] == project_id]
-
-    if len(project) == 0:
-        abort(404, {'message': 'No data found'})
-    projects.remove(project[0])
-    return jsonify({'result': 'Succeed'}), 201
-    
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=1801, debug=True)

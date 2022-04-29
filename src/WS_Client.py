@@ -202,20 +202,18 @@ if __name__ == "__main__":
     test_get(data_args)
     
     #add institution test (add differentInst to Jeff token)
-    '''params = {}
+    params = {}
     params['Name'] = 'Jeff'
     data_args = {'Name' : 'Jeff', 'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
                    'NewInstitutionName' : 'differentInst', \
                     'NewAddress' : '0x6e8df907de0c1bb5a6d32a21ff0042fbef0c05d0'}
     tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
     tokenID = tokenEntry['TokenID']
-    
     data_args['TokenID'] = str(tokenID)
-    
-    test_create_update_institution(data_args)'''
+    #test_create_update_institution(data_args)
     
     #delete institution test (delete newInst from token AC list Jeff)
-    '''params = {}
+    params = {}
     params['Name'] = 'Jeff'
     data_args = {'Name' : 'Jeff', 'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
                    'NewInstitutionName' : 'newInst', \
@@ -224,13 +222,13 @@ if __name__ == "__main__":
     tokenID = tokenEntry['TokenID']
     
     data_args['TokenID'] = str(tokenID)
-    test_update_delete_institution(data_args)'''
+    #test_update_delete_institution(data_args)
     
     #create new token in SC and new entry in database
-    '''data_args = {'Name' : 'Bob', 'Gender' : 'Male', 'TokenID' : '0x1111dfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
+    data_args = {'Name' : 'Bob', 'Gender' : 'Male', 'TokenID' : '0x1111dfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
                     'NewInstitutionName' : 'EHR_ACToken_Proj', 'NewAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
                     'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f'}
-    test_create_patient_entry(data_args)'''
+    #test_create_patient_entry(data_args)
     
     #why id the EHR that is returned all jumboed up in order?
     #test_EHR_ACToken()
