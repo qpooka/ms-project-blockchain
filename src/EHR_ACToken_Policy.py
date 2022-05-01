@@ -86,6 +86,9 @@ class EHR_ACToken_Policy(object):
         path_db = 'REGD.db'
         reg_entry = RegistrationManager.select_ByName(path_db, institutionName)
         
+        if len(reg_entry) < 1:
+            return ret
+        
         inst_address = reg_entry[0]['SC_Address']
         if institutionAddress == inst_address:
             ret = True
@@ -98,6 +101,9 @@ class EHR_ACToken_Policy(object):
         ret = False
         path_db = 'PACD.db'
         patient_entry = PatientACManager.select_ByName(path_db, patientName)
+        
+        if len(patient_entry) < 1:
+            return ret
         
         inst_addresses = patient_entry[0]['InstitutionAddress']
         splitAddresses = inst_addresses.split(",")
@@ -115,14 +121,6 @@ class EHR_ACToken_Policy(object):
             ret = True
         
         return ret
-      
-    @staticmethod  
-    def is_access_request_valid(req_args):
-        ret = False
-        #if req_args.get('address') == None:
-        #    ret = False
-
-        return True
 
 def test_CapACToken():
 

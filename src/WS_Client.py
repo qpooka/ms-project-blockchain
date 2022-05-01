@@ -129,8 +129,8 @@ def test_get(data_args = {}):
     
     #tokenID = WSClient.Get_TokenIdByName('http://128.226.78.89/test/api/v1.0/dt/TokenID', params, data_args)
     tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
+    print(tokenEntry)
     tokenID = tokenEntry['TokenID']
-    print(tokenID)
     params['TokenID'] = tokenID
     #print(WSClient.Get_EHRbyTokenID('http://128.226.78.89/test/api/v1.0/dt/EHR', params, data_args))
     EHR = WSClient.Get_EHRbyTokenID('http://0.0.0.0:1801/test/api/v1.0/dt/EHR', params, data_args)
@@ -170,20 +170,52 @@ def test_add(data_args={}):
     #print(json_response['project_data'])
     print(json_response)
     
+def wrap_test_get():
+    #get test (get Jeff token and EHR)
+    data_args = {'Name' : 'Bob', 'InstitutionName' : 'EHR_ACToken_Proj', \
+                    'InstitutionAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f'}
+    test_get(data_args)
 
+def wrap_test_create():
+    #create new token in SC and new entry in database
+    data_args = {'Name' : 'Bob', 'Gender' : 'Male', 'TokenID' : '0x1111dfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
+                    'NewInstitutionName' : 'EHR_ACToken_Proj', 'NewAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
+                    'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f'}
+    test_create_patient_entry(data_args)
+
+def wrap_test_add():
+    #add institution test (add differentInst to ___ token)
+    params = {}
+    params['Name'] = 'Bob'
+    data_args = {'Name' : 'Bob', 'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
+                   'NewInstitutionName' : 'differentInst', \
+                    'NewAddress' : '0x6e8df907de0c1bb5a6d32a21ff0042fbef0c05d0'}
+    data_args['InstitutionAddress'] = '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f'
+    data_args['InstitutionName'] = 'EHR_ACToken_Proj'
+    tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
+    print(tokenEntry)
+    tokenID = tokenEntry['TokenID']
+    data_args['TokenID'] = str(tokenID)
+    test_create_update_institution(data_args)
+
+def wrap_test_delete():
+    #delete institution test (delete newInst from token AC list Jeff)
+    params = {}
+    params['Name'] = 'Jeff'
+    data_args = {'Name' : 'Jeff', 'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
+                   'NewInstitutionName' : 'newInst', \
+                    'NewAddress' : '0xa7d094a545a59610a9ef9f36afb4d640d3140cd6'}
+    tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
+    tokenID = tokenEntry['TokenID']
+    data_args['TokenID'] = str(tokenID)
+    test_update_delete_institution(data_args)
     
 def test_EHR_ACToken():
-    
-    #params = {'project_id':'2'}
-    data_args = {'project_id':'2'}
-    
-    start_time=time.time()
     
     #print token_data   
     #test_add(data_args)
     #test_update(data_args)
     #test_delete(data_args) 
-    test_search(data_args)
     
     end_time=time.time()
     exec_time=end_time-start_time
@@ -196,40 +228,13 @@ def test_EHR_ACToken():
     print WSClient.Get_DataByID('http://128.226.78.217/test/api/v1.0/dt/project',params, data_args)'''
 
 if __name__ == "__main__":
-    #get test (get Jeff token and EHR)
-    data_args = {'Name' : 'Bob', 'InstitutionName' : 'EHR_ACToken_Proj', \
-                    'InstitutionAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f'}
-    test_get(data_args)
+    wrap_test_get()
     
-    #add institution test (add differentInst to Jeff token)
-    params = {}
-    params['Name'] = 'Jeff'
-    data_args = {'Name' : 'Jeff', 'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
-                   'NewInstitutionName' : 'differentInst', \
-                    'NewAddress' : '0x6e8df907de0c1bb5a6d32a21ff0042fbef0c05d0'}
-    tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
-    tokenID = tokenEntry['TokenID']
-    data_args['TokenID'] = str(tokenID)
-    #test_create_update_institution(data_args)
+    #wrap_test_create()
     
-    #delete institution test (delete newInst from token AC list Jeff)
-    params = {}
-    params['Name'] = 'Jeff'
-    data_args = {'Name' : 'Jeff', 'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
-                   'NewInstitutionName' : 'newInst', \
-                    'NewAddress' : '0xa7d094a545a59610a9ef9f36afb4d640d3140cd6'}
-    tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
-    tokenID = tokenEntry['TokenID']
+    #wrap_test_add()
     
-    data_args['TokenID'] = str(tokenID)
-    #test_update_delete_institution(data_args)
-    
-    #create new token in SC and new entry in database
-    data_args = {'Name' : 'Bob', 'Gender' : 'Male', 'TokenID' : '0x1111dfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
-                    'NewInstitutionName' : 'EHR_ACToken_Proj', 'NewAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f', \
-                    'SuperAddress' : '0x548bdfcaeb2758ee2a8ca71d8f5baafacf5ea49f'}
-    #test_create_patient_entry(data_args)
+    #wrap_test_delete()
     
     #why id the EHR that is returned all jumboed up in order?
-    #test_EHR_ACToken()
     pass

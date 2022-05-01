@@ -76,17 +76,11 @@ def get_EHRbyTokenID():
     if(not EHR_ACToken_Policy.check_token(str(tokenID), req_data['InstitutionAddress'])):
         abort(401, {'message': 'Authorization fail, deny access'})
     
-    
-    print("========HERE IS IT=========")
-    print("PASSED TEST")
-    print("========ENDS HERE==========")
-    
-    
     #call SC to query token (based on tokenID), extract name
     #also check token, the institution name matches
     aToken = EHR_ACToken_Policy.get_token(str(tokenID))
-    print(aToken)
-    print(RegistrationManager.select_Allentry('REGD.db'))
+    #print(aToken)
+    #print(RegistrationManager.select_Allentry('REGD.db'))
     
     patientName = aToken['name']
     
