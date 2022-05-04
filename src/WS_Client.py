@@ -15,7 +15,7 @@ import json
 #from EHR_ACToken_Proj import EHR_ACToken_Proj
 
 import sys
-#from utilities import DatetimeUtil, TypesUtil, FileUtil
+from utilities import DatetimeUtil, TypesUtil, FileUtil
 
 now = datetime.datetime.now()
 datestr=now.strftime("%Y-%m-%d")
@@ -127,24 +127,44 @@ def test_get(data_args = {}):
     params['Name'] = data_args['Name']
     #print(params)
     
-    #tokenID = WSClient.Get_TokenIdByName('http://128.226.78.89/test/api/v1.0/dt/TokenID', params, data_args)
     tokenEntry = WSClient.Get_TokenIdByName('http://0.0.0.0:1801/test/api/v1.0/dt/TokenID', params, data_args)
     print(tokenEntry)
     tokenID = tokenEntry['TokenID']
     params['TokenID'] = tokenID
-    #print(WSClient.Get_EHRbyTokenID('http://128.226.78.89/test/api/v1.0/dt/EHR', params, data_args))
+    
+    start_time = time.time()
+    
     EHR = WSClient.Get_EHRbyTokenID('http://0.0.0.0:1801/test/api/v1.0/dt/EHR', params, data_args)
     print(EHR)
+    
+    end_time = time.time()
+    exec_time = end_time - start_time
+    
+    time_exec=format(exec_time*1000, '.3f')
+    print("Execution time is:%2.6f" %(exec_time))
+    
+    #FileUtil.AddLine('exec_time_client.log', time_exec)
     
     Token = WSClient.Get_TokenbyTokenID('http://0.0.0.0:1801/test/api/v1.0/dt/Token', params, data_args)
     print(Token)
 
 def test_create_update_institution(data_args = {}):
-    resp1 = WSClient.Create_InstitutionRegistryEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/inst_reg', data_args)
+    #resp1 = WSClient.Create_InstitutionRegistryEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/inst_reg', data_args)
+    
+    start_time = time.time()
+    
     resp2 = WSClient.Update_AddInstitution('http://0.0.0.0:1801/test/api/v1.0/dt/update/add/institution', data_args)
-    print(resp1)
+    
+    end_time = time.time()
+    exec_time = end_time - start_time
+    
+    time_exec=format(exec_time*1000, '.3f')
+    print("Execution time is:%2.6f" %(exec_time))
+    
+    FileUtil.AddLine('exec_time_update_client.log', time_exec)
+    #print(resp1)
     print(resp2)
-    print("Add Test finished")
+    #print("Add Test finished")
     
 def test_update_delete_institution(data_args = {}):
     resp1 = WSClient.Update_DeleteInstitution('http://0.0.0.0:1801/test/api/v1.0/dt/update/delete/institution', data_args)
@@ -152,8 +172,20 @@ def test_update_delete_institution(data_args = {}):
     print("Delete Test finished")
     
 def test_create_patient_entry(data_args = {}):
+    
+    start_time = time.time()
+
     resp = WSClient.Create_PatientEntry('http://0.0.0.0:1801/test/api/v1.0/dt/create/patient_entry', data_args)
     print(resp)
+    
+    end_time = time.time()
+    exec_time = end_time - start_time
+    
+    time_exec=format(exec_time*1000, '.3f')
+    print("Execution time is:%2.6f" %(exec_time))
+    
+    FileUtil.AddLine('exec_time_update_client.log', time_exec)
+    
     
 def test_add(data_args={}):
     project = {
@@ -228,8 +260,17 @@ def test_EHR_ACToken():
     print WSClient.Get_DataByID('http://128.226.78.217/test/api/v1.0/dt/project',params, data_args)'''
 
 if __name__ == "__main__":
-    wrap_test_get()
-    
+    '''for i in range(50):
+        wrap_test_get()
+        time.sleep(0.1)'''
+     
+    '''for i in range(50):
+        print("starting")
+        wrap_test_add()
+        print("ending")'''
+     
+    #wrap_test_get()
+      
     #wrap_test_create()
     
     #wrap_test_add()

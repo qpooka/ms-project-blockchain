@@ -17,6 +17,9 @@ from db_layer import *
 from EHR_ACToken_Proj import EHR_ACToken_Proj
 from EHR_ACToken_Policy import EHR_ACToken_Policy
 
+import time
+from utilities import DatetimeUtil, TypesUtil, FileUtil
+
 app = Flask(__name__)
 
 now = datetime.datetime.now()
@@ -66,6 +69,8 @@ def get_EHRbyTokenID():
     #authorization, check SC and inst registry
     #need tokenID and institution address
     
+    start_time = time.time()
+    
     if(not EHR_ACToken_Policy.check_institution_registry(req_data['InstitutionName'], req_data['InstitutionAddress'])):
         abort(401, {'message2': 'Authorization fail, deny access'})
     
@@ -75,6 +80,14 @@ def get_EHRbyTokenID():
     #check SC
     if(not EHR_ACToken_Policy.check_token(str(tokenID), req_data['InstitutionAddress'])):
         abort(401, {'message': 'Authorization fail, deny access'})
+    
+    end_time = time.time()
+    exec_time = end_time - start_time
+    
+    time_exec=format(exec_time*1000, '.3f')
+    print("Execution time is:%2.6f" %(exec_time))
+
+    #FileUtil.AddLine('exec_time_server.log', time_exec)
     
     #call SC to query token (based on tokenID), extract name
     #also check token, the institution name matches
@@ -140,7 +153,7 @@ def get_TokenIdByName():
     patientName = request.args.get('Name', default = 1, type = str)
     
     if(not EHR_ACToken_Policy.check_institution_registry(req_data['InstitutionName'], req_data['InstitutionAddress'])):
-        abort(401, {'message2': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_patient_database(patientName, req_data['InstitutionAddress'])):
         abort(401, {'message': 'Authorization fail, deny access'})
@@ -171,7 +184,7 @@ def create_patient_entry():
         abort(401, {'message': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_institution_registry(req_data['NewInstitutionName'], req_data['NewAddress'])):
-        abort(401, {'message2': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     data_in = [req_data['Name'], req_data['TokenID'], req_data['NewInstitutionName'], req_data['NewAddress']]
     
@@ -229,20 +242,41 @@ def update_add_institution():
         abort(401, {'message1': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_institution_registry(req_data['NewInstitutionName'], req_data['NewAddress'])):
-        abort(401, {'message2': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_patient_database(req_data['Name'], req_data['SuperAddress'])):
-        abort(401, {'message3': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_token(str(req_data['TokenID']), req_data['SuperAddress'])):
-        abort(401, {'message4': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     data_in = [req_data['Name'], req_data['NewInstitutionName'], req_data['NewAddress']]
     
     PatientACManager.update_addInstitution('PACD.db', data_in)
     #call SC to update AC list in token
     #maybe do this in EHR_ACToken_Policy? or directly in WS_Server?
+    
+    origToken = EHR_ACToken_Policy.get_token(str(req_data['TokenID']))
+    origInstAmt = origToken['institutionAmount']
+    
+    start_time = time.time()
+    
     EHR_ACToken_Policy.add_institution(req_data['TokenID'], req_data['NewInstitutionName'], req_data['NewAddress'])
+    
+    
+    while True:
+        aToken = EHR_ACToken_Policy.get_token(str(req_data['TokenID']))
+        newInstAmt = aToken['institutionAmount']
+        if newInstAmt == (origInstAmt + 1):
+            break
+        
+    end_time = time.time()
+    exec_time = end_time - start_time
+    
+    time_exec=format(exec_time*1000, '.3f')
+    print("Execution time is:%2.6f" %(exec_time))
+
+    #FileUtil.AddLine('exec_time_server.log', time_exec)
     
     return jsonify({'result': 'Succeed', 'data' : data_in}), 201     
     
@@ -259,16 +293,16 @@ def update_delete_institution():
         abort(401, {'message': 'missing relevant information, deny access'})
     
     if(not EHR_ACToken_Policy.check_address_json(req_data['SuperAddress'])):
-        abort(401, {'message1': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_institution_registry(req_data['NewInstitutionName'], req_data['NewAddress'])):
-        abort(401, {'message2': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_patient_database(req_data['Name'], req_data['SuperAddress'])):
-        abort(401, {'message3': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     if(not EHR_ACToken_Policy.check_token(str(req_data['TokenID']), req_data['SuperAddress'])):
-        abort(401, {'message4': 'Authorization fail, deny access'})
+        abort(401, {'message': 'Authorization fail, deny access'})
     
     data_in = [req_data['Name'], req_data['NewInstitutionName'], req_data['NewAddress']]
     
